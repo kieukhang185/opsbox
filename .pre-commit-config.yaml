@@ -8,6 +8,15 @@ repos:
       - id: ruff-format
         types_or: [ python, pyi ]
 
+  - repo: https://github.com/pycqa/flake8
+    rev: 6.0.0
+    hooks:
+      - id: flake8
+        additional_dependencies: [flake8==6.0.0]
+        language_version: python3.12.3
+        exclude: ^src/app/alembic
+        files: ^src/
+
   - repo: https://github.com/psf/black
     rev: 24.8.0
     hooks:
@@ -26,6 +35,13 @@ repos:
         name: shellcheck (ops/scripts)
         files: ^ops/scripts/.*\.sh$
         args: [-x]
+
+  - repo: https://github.com/AleksaC/hadolint-py
+    rev: v2.12.1b3
+    hooks:
+      - id: hadolint
+        args: [--ignore, DL3008, --ignore , DL3007, --ignore, DL4006]
+        exclude: ^src/app/alembic
 
 # Exclude non-code and generated paths globally
 exclude: |
