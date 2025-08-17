@@ -1,0 +1,25 @@
+# allow-proxy.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: allow-proxy
+  namespace: kube-system
+rules:
+- apiGroups: [""]
+  resources: ["services/proxy"]
+  verbs: ["get"]   # add others only if truly needed
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: allow-proxy-binding
+  namespace: kube-system
+subjects:
+- kind: ServiceAccount
+  name: kind
+  namespace: kube-system
+roleRef:
+  kind: Role
+  name: allow-proxy
+  apiGroup: rbac.authorization.k8s.io
