@@ -5,6 +5,8 @@ A small, real service (API + worker) and all the DevOps around it—containers, 
 ```bash
 python3 --version 
 Python 3.12.3
+
+helm 3.17.4
 ```
 
 ### Setup python venv

@@ -6,11 +6,11 @@ RUN useradd -m app
 
 WORKDIR /app
 
-COPY worker/requirements.txt .
+COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY worker/app ./app
+COPY app ./app
 
 USER app
 

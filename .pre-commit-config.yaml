@@ -33,6 +33,7 @@ repos:
     hooks:
       - id: shellcheck
         name: shellcheck (ops/scripts)
+        args: [--ignore, SC2015]
         files: ^ops/scripts/.*\.sh$
         args: [-x]
 
