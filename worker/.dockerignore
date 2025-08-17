@@ -1,0 +1,58 @@
+# --- VCS & meta ---
+.git
+.github
+.gitattributes
+.gitignore
+
+# --- Python artifacts ---
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+.eggs/
+.dist-info/
+.venv/
+venv/
+pip-wheel-metadata/
+build/
+dist/
+.cache/
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+.coverage*
+htmlcov/
+
+# --- OS/editor junk ---
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# --- Logs & temp ---
+*.log
+*.pid
+*.tmp
+tmp/
+logs/
+
+# --- Env & secrets (never send these) ---
+.env
+.env.*
+*.pem
+*.key
+*.crt
+
+# --- Not needed in runtime image ---
+docs/
+examples/
+*.md
+
+# --- Infra not required at build-time for app image ---
+ops/helm/
+ops/scripts/
+
+# --- Tests (exclude unless you run tests inside the image) ---
+tests/

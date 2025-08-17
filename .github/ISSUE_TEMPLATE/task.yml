@@ -1,0 +1,38 @@
+name: Task (1 point)
+description: One-day task with standard checklist.
+title: "[Task] "
+labels: ["task", "points:1"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What needs to be done? Keep it to a single day of work.
+      placeholder: Short description…
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: Bullet the specific outcomes or behavior changes.
+      placeholder: "• ..."
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: Implement
+        - label: Tests (if applicable)
+        - label: Docs/README note
+        - label: CI lint/format passes
+  - type: input
+    id: pr
+    attributes:
+      label: PR link
+      placeholder: https://github.com/ORG/REPO/pull/123
+  - type: input
+    id: ci
+    attributes:
+      label: CI run link
+      placeholder: https://github.com/ORG/REPO/actions/runs/……
