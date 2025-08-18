@@ -37,8 +37,10 @@ install_docker() {
         # Enable and start Docker
         sudo systemctl enable docker
         sudo systemctl start docker
+        sudo usermod -aG docker "${USER}"
+        newgrp docker
 
-        check_installed docker && echo "✅ Docker installed successfully: $(docker --version)" || echo "Docker installation failed"
+        cmd_check docker && echo "✅ Docker installed successfully: $(docker --version)" || echo "Docker installation failed"
     else
         echo "Unsupported system: ${sys}. Exiting."
         exit 1
@@ -58,7 +60,7 @@ ensure_docker(){
 install_kubectl(){
     echo "⚡ Installing Kubectl..."
     sudo snap install kubectl --classic
-    check_installed kubectl && echo "✅ Kubectl installed successfully: $(kubectl version --client)" || echo "Kubectl installation failed"
+    cmd_check kubectl && echo "✅ Kubectl installed successfully: $(kubectl version --client)" || echo "Kubectl installation failed"
 }
 
 ensure_kubectl(){
@@ -77,7 +79,7 @@ install_kind() {
     curl -Lo ./kind "https://kind.sigs.k8s.io/dl/${KIND_VERSION}/kind-linux-amd64"
     chmod +x ./kind
     sudo mv ./kind /usr/local/bin/kind
-    check_installed kind &&  echo "✅ Kind installed successfully: $(kind --version)" ||  echo "Kind installation failed"
+    cmd_check kind &&  echo "✅ Kind installed successfully: $(kind --version)" ||  echo "Kind installation failed"
     echo "✅ Kind installed successfully: $(kind --version)"
 }
 
@@ -90,11 +92,27 @@ ensure_kind(){
     fi
 }
 
+install_helm(){
+    echo "⚡ Installing Helm..."
+    sudo snap install helm --classic
+    cmd_check helm && echo "✅ Helm installed successfully: $(helm version --shortt)" || echo "Helm installation failed"
+}
+
+ensure_helm(){
+    if cmd_check helm
+    then
+        echo "✅ Helm present: $(helm version --short)"
+    else
+        install_helm
+    fi
+}
+
 setup_k8s_tools(){
     echo "Setting up Kubernetes tools..."
     ensure_docker
     ensure_kubectl
     ensure_kind
+    ensure_helm
 }
 
 setup_pre_commit(){
