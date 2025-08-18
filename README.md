@@ -28,9 +28,11 @@ pre-commit run --all-files
 
 ### Developer workflow
 - List targets: `make help`
-- Format: `make fmt`
-- Lint: `make lint`
-- Test: `make test`
-- Build images: `make build` (uses TAG from `git rev-parse --short HEAD`)
-- Full local pipeline: `make pipeline-local`
-- Run local stack: `make run` (calls `ops/scripts/bootstrap.sh`)
+- Build images: `make build`
+- Deploy: `make deploy`
+- Test: `make smoke`
+- Uninstall Helm releases, delete namespace, kill port-forward: `make down`
+- Cleanup: `make clean`
+- Reset: `make down + make clean`
+- Nuke: `make nuke`
+- Clean docker: `make prune`
