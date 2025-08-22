@@ -1,7 +1,9 @@
 from fastapi.testclient import TestClient
+
 from opsbox.api.app.main import app
 
 client = TestClient(app)
+
 
 def test_create_and_get_task():
     resp = client.post("/tasks", json={"title": "first"})
@@ -17,6 +19,7 @@ def test_create_and_get_task():
     fetched = g.json()
     assert fetched["id"] == task_id
     assert fetched["title"] == "first"
+
 
 def test_list_and_update_and_delete():
     # create two
@@ -45,6 +48,7 @@ def test_list_and_update_and_delete():
     # 404 after delete
     g = client.get(f"/tasks/{t2['id']}")
     assert g.status_code == 404
+
 
 def test_put_not_found():
     r = client.put("/tasks/c5256521-1111-43e8-9748-6f033cd4a3af", json={"title": "x"})

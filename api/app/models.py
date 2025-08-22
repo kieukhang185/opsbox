@@ -1,9 +1,11 @@
-from sqlalchemy import Column, DateTime, String, Enum
 import enum
-from .database import Base
-from sqlalchemy.dialects.postgresql import UUID
 import uuid
 from datetime import datetime
+
+from sqlalchemy import Column, DateTime, Enum, String
+from sqlalchemy.dialects.postgresql import UUID
+
+from .database import Base
 
 
 class TaskStatus(enum.Enum):
@@ -12,6 +14,7 @@ class TaskStatus(enum.Enum):
     RUNNING = "running"
     SUCCEEDED = "succeeded"
     FAILED = "failed"
+
 
 class Task(Base):
     __tablename__ = "task"

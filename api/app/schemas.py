@@ -1,28 +1,33 @@
-from uuid import UUID
-from typing import Optional
-from pydantic import BaseModel
 from datetime import datetime
+from uuid import UUID
+
+from pydantic import BaseModel
+
 from .models import TaskStatus
 
+
 class TaskBase(BaseModel):
-    title: Optional[str] = None
+    title: str | None = None
 
     class Config:
         from_attributes = True
 
+
 class TaskCreate(TaskBase):
     pass
 
+
 class TaskUpdate(TaskBase):
-    status: Optional[TaskStatus] = None
-    result: Optional[str] = None
+    status: TaskStatus | None = None
+    result: str | None = None
+
 
 class TaskOut(BaseModel):
     id: UUID
-    title: Optional[str]
+    title: str | None
     created_at: datetime
-    status: Optional[TaskStatus]
-    result: Optional[str] = None
+    status: TaskStatus | None
+    result: str | None = None
 
     class Config:
         from_attributes = True

@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+export WORKSPACE="$(find ${HOME} -type d -name opsbox)"
+
 setup_tool(){
-  source setup.sh
+  source "${WORKSPACE}/ops/scripts/setup.sh"
   install_"$1"
 }
 
-need() { command -v "$1" >/dev/null || { echo "Missing: $1"; setup_tool $1; }; }
+need() { command -v "$1" >/dev/null || { echo "Missing: $1"; setup_tool "$1"; }; }
 for bin in docker kind kubectl helm; do need "$bin"; done
 
 CLUSTER=opsbox

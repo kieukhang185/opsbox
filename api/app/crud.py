@@ -1,7 +1,7 @@
+from uuid import UUID
 
 from sqlalchemy.orm import Session
-from uuid import UUID
-from typing import Optional, List
+
 from .models import Task, TaskStatus
 from .schemas import TaskUpdate
 
@@ -13,13 +13,16 @@ def create(db: Session, title: str) -> Task:
     db.refresh(task)
     return task
 
-def list_tasks(db: Session) -> List[Task]:
+
+def list_tasks(db: Session) -> list[Task]:
     return db.query(Task).all()
 
-def get_task(db: Session, task_id: UUID) -> Optional[Task]:
+
+def get_task(db: Session, task_id: UUID) -> Task | None:
     return db.get(Task, task_id)
 
-def update(db: Session, task_id: UUID, task_update: TaskUpdate) -> Optional[Task]:
+
+def update(db: Session, task_id: UUID, task_update: TaskUpdate) -> Task | None:
     task = get_task(db, task_id)
     if not task:
         return None
@@ -33,6 +36,7 @@ def update(db: Session, task_id: UUID, task_update: TaskUpdate) -> Optional[Task
     db.commit()
     db.refresh(task)
     return task
+
 
 def delete(db: Session, task_id: UUID) -> bool:
     task = get_task(db, task_id)

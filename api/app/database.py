@@ -1,8 +1,9 @@
 import os
+from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Generator
+
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./app/opsbox.db")
 
@@ -13,6 +14,7 @@ engine = create_engine(DATABASE_URL, echo=False, future=True, connect_args=conne
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
 
 Base = declarative_base()
+
 
 @contextmanager
 def session_scope():
@@ -26,6 +28,7 @@ def session_scope():
     finally:
         session.close()
 
+
 # FastAPI dependency
 def get_db() -> Generator:
     db = SessionLocal()
@@ -34,6 +37,8 @@ def get_db() -> Generator:
     finally:
         db.close()
 
+
 def init_db():
     from . import models  # noqa: F401
+
     Base.metadata.create_all(bind=engine)
