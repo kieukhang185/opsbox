@@ -6,7 +6,7 @@ API_IMAGE ?= opsbox-api:dev			# Api image
 WRK_IMAGE ?= opsbox-worker:dev		# Worker image
 
 all:
-	$(info  ⚡ Running all build depkoy and smoke...)
+	$(info  ⚡ Running all build deploy and smoke...)
 	$(MAKE) build deploy smoke
 
 build:
@@ -21,6 +21,8 @@ deploy:
 smoke:
 	$(info    ⚡ Starting smoke tests...)
 	curl -sf http://127.0.0.1:8080/health
+	kubectl -n dev exec -it sts/redis-master -- redis-cli PING
+	kubectl -n dev run redistest --rm -it --image=alpine:3.19 -- sh -lc 'apk add -q --no-progress redis; redis-cli -h redis-master -p 6379 PING'
 
 kill-pf:
 	$(info    ⚡ Stopping port-forwarding...)

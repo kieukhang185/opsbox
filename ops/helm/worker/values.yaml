@@ -122,3 +122,6 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+config:
+  redisUrl: "redis://redis-master.dev.svc.cluster.local:6379/0"

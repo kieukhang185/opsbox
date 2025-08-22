@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-export WORKSPACE="$(find ${HOME} -type d -name opsbox)"
+# shellcheck disable=SC2155
+export WORKSPACE="$(find "${HOME}" -type d -name opsbox)"
 
 setup_tool(){
   source "${WORKSPACE}/ops/scripts/setup.sh"
@@ -19,7 +20,7 @@ fi
 # Postgres & Redis (bitnami)
 helm repo add bitnami https://charts.bitnami.com/bitnami
 helm upgrade --install pg bitnami/postgresql --set auth.postgresPassword=postgres --namespace dev --create-namespace
-helm upgrade --install redis bitnami/redis --set architecture=standalone --namespace dev
+helm upgrade --install redis bitnami/redis --set architecture=standalone --namespace dev -f ops/helm/redis/values.dev.yaml
 
 # Build images and load into kind
 docker build -t opsbox-api:dev api
@@ -38,6 +39,7 @@ helm upgrade --install worker ./ops/helm/worker -n dev \
   --set image.repository=opsbox-worker --set image.tag=dev
 
 # Smoke: port-forward API and hit /health
+kubectl -n dev rollout status statefulset/redis-master
 kubectl -n dev rollout status deploy/api
 kubectl -n dev port-forward svc/api 8080:80 >/tmp/pf.log 2>&1 &
 sleep 2
