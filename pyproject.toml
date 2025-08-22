@@ -8,5 +8,9 @@ line-length = 100
 fix = true
 
 [tool.ruff.lint]
-select = ["E", "F", "B", "UP", "SIM", "I"]
+select = ["E","F","I","B","UP","SIM"]
 fix = true
+
+[tool.ruff.lint.isort]
+known-first-party = ["app", "opsbox", "tests"]
+combine-as-imports = true
