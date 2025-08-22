@@ -15,21 +15,19 @@ require_pkgs() {
 ### --- Function to install Docker ---
 install_docker() {
     sys=$(get_sys_name)
-    if [[ "${sys,,}" == "ubuntu" || "${sys,,}" == "debian" ]]; then
+    sys="${sys,,}"
+    if [[ "${sys}" == "ubuntu" || "${sys}" == "debian" ]]; then
         echo "⚡ Installing Docker for ${sys}..."
-        sudo apt-get update -y
-        sudo apt-get install -y \
-            ca-certificates \
-            gnupg \
-            lsb-release
+        require_pkgs
 
         # Add Docker’s official GPG key
         sudo mkdir -p /etc/apt/keyrings
-        curl -fsSL https://download.docker.com/linux/"${sys}"/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+        curl -fsSL "https://download.docker.com/linux/${sys}/gpg" | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 
         # Set up the repository
-        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/'${sys}' \
-        $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+        echo \
+        "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/${sys} $(lsb_release -cs) stable" \
+        | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
         sudo apt-get update -y
         sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
@@ -123,9 +121,7 @@ setup_pre_commit(){
 
 setup(){
     echo "Setting up..."
-    sys=$(get_sys_name)
-    if [[ "${sys}" == "Ubuntu" || "${sys}" == "Debian" ]]; then
-        require_pkgs
-        setup_k8s_tools
-    fi
+    require_pkgs
+    setup_k8s_tools
+    cmd_check pre-commit || setup_pre_commit
 }

@@ -1,4 +1,4 @@
-.PHONY: all build deploy smoke down clean reset nuke kill-pf prune help
+.PHONY: all build deploy smoke down clean reset nuke prune help
 
 NS        ?= dev 					# Namespace
 CLUSTER   ?= opsbox 				# Cluser name
