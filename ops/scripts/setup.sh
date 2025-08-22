@@ -93,7 +93,7 @@ ensure_kind(){
 install_helm(){
     echo "⚡ Installing Helm..."
     sudo snap install helm --classic
-    cmd_check helm && echo "✅ Helm installed successfully: $(helm version --shortt)" || echo "Helm installation failed"
+    cmd_check helm && echo "✅ Helm installed successfully: $(helm version --short)" || echo "Helm installation failed"
 }
 
 ensure_helm(){

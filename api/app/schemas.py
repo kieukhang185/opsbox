@@ -1,16 +1,13 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from .models import TaskStatus
 
 
 class TaskBase(BaseModel):
-    title: str | None = None
-
-    class Config:
-        from_attributes = True
+    title: str | None
 
 
 class TaskCreate(TaskBase):
@@ -18,8 +15,8 @@ class TaskCreate(TaskBase):
 
 
 class TaskUpdate(TaskBase):
-    status: TaskStatus | None = None
-    result: str | None = None
+    status: TaskStatus | None
+    result: str | None
 
 
 class TaskOut(BaseModel):
@@ -27,7 +24,6 @@ class TaskOut(BaseModel):
     title: str | None
     created_at: datetime
     status: TaskStatus | None
-    result: str | None = None
+    result: str | None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

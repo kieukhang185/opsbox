@@ -1,8 +1,12 @@
 [tool.black]
 line-length = 100
-target-version = ["py311"]
+target-version = ["py312"]
 
-[tool.isort]
-profile = "black"
-line_length = 100
-known_first_party = ["opsbox"]
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+fix = true
+
+[tool.ruff.lint]
+select = ["E", "F", "B", "UP", "SIM", "I"]
+fix = true

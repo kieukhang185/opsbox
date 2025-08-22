@@ -1,6 +1,7 @@
+from typing import Annotated, TypeAlias
 from uuid import UUID
 
-from fastapi import FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy.orm import Session
 
 from . import crud
@@ -18,39 +19,42 @@ def on_startup():
     init_db()
 
 
+DBSession: TypeAlias = Annotated[Session, Depends(get_db)]
+
+
 @app.get("/health")
 def read_health():
     return {"status": "ok"}
 
 
-@app.post("/tasks/", response_model=TaskOut, status_code=status.HTTP_201_CREATED)
-def create_task(payload: TaskCreate, db: Session = get_db):
-    return crud.create(db, title=payload.title)
+@app.post("/tasks/", response_model=TaskOut)
+def create_task(payload: TaskCreate, db: DBSession):
+    return crud.create(db, payload)
 
 
 @app.get("/tasks/", response_model=list[TaskOut])
-def list_tasks(db: Session = get_db):
+def list_tasks(db: DBSession):
     return crud.list_tasks(db)
 
 
 @app.get("/tasks/{task_id}", response_model=TaskOut)
-def get_task(task_id: UUID, db: Session = get_db):
-    task = crud.get_task(db, task_id=task_id)
+def get_task(task_id: UUID, db: DBSession):
+    task = crud.get_task(db, task_id)
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
     return task
 
 
 @app.put("/tasks/{task_id}", response_model=TaskOut)
-def update_task(task_id: UUID, payload: TaskUpdate, db: Session = get_db):
+def update_task(task_id: UUID, payload: TaskUpdate, db: DBSession):
     task = crud.update(db, task_id, payload)
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
     return task
 
 
-@app.delete("/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_task(task_id: UUID, db: Session = get_db):
+@app.delete("/tasks/{task_id}", response_model=dict)
+def delete_task(task_id: UUID, db: DBSession):
     status = crud.delete(db, task_id)
     if not status:
         raise HTTPException(status_code=404, detail="Task not found")
