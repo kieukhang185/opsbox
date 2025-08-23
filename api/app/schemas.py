@@ -1,9 +1,8 @@
 from datetime import datetime
 from uuid import UUID
 
+from opsbox_common.models import TaskStatus
 from pydantic import BaseModel, ConfigDict
-
-from .models import TaskStatus
 
 
 class TaskBase(BaseModel):

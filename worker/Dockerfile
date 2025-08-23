@@ -6,11 +6,13 @@ RUN useradd -m app
 
 WORKDIR /app
 
-COPY requirements.txt .
+COPY worker/requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app ./app
+COPY worker/app ./app
+
+COPY shared/opsbox_common ./opsbox_common
 
 USER app
 

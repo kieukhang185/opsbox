@@ -1,8 +1,8 @@
 from uuid import UUID
 
+from opsbox_common.models import Task, TaskStatus
 from sqlalchemy.orm import Session
 
-from .models import Task, TaskStatus
 from .schemas import TaskCreate, TaskUpdate
 
 

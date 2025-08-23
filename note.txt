@@ -1,0 +1,3 @@
+# check api initcontainer log
+kubectl -n dev logs api-fb6cf6845-5sglk -c migrate --previous --timestamps
+kubectl -n dev describe pod api-fb6cf6845-2lnfh | sed -n '1,200p'
