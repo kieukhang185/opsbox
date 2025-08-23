@@ -133,6 +133,9 @@ tolerations: []
 
 affinity: {}
 
+config:
+  databaseUrl: sqlite:////app/app/data/opsbox.db
+
 env:
   - name: REDIS_URL
     value: "redis://redis-master.dev.svc.cluster.local:6379/0"

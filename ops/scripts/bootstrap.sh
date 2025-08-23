@@ -3,6 +3,7 @@ set -Eeuo pipefail
 
 # shellcheck disable=SC2155
 export WORKSPACE="$(find "${HOME}" -type d -name opsbox)"
+pushd "$WORKSPACE" || exit 1
 
 setup_tool(){
   source "${WORKSPACE}/ops/scripts/setup.sh"
@@ -23,8 +24,8 @@ helm upgrade --install pg bitnami/postgresql --set auth.postgresPassword=postgre
 helm upgrade --install redis bitnami/redis --set architecture=standalone --namespace dev -f ops/helm/redis/values.dev.yaml
 
 # Build images and load into kind
-docker build -t opsbox-api:dev api
-docker build -t opsbox-worker:dev worker
+docker build -f api/Dockerfile -t opsbox-api:dev .
+docker build -f worker/Dockerfile -t opsbox-worker:dev .
 kind load docker-image opsbox-api:dev --name "$CLUSTER"
 kind load docker-image opsbox-worker:dev --name "$CLUSTER"
 
@@ -54,5 +55,6 @@ while [ $retry -gt 0 ]; do
   sleep "${time_sleep}"
   retry=$((retry - 1))
 done
+popd
 echo "SMOKE: FAIL"
 exit 1

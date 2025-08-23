@@ -32,6 +32,14 @@ spec:
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      initContainers:
+        - name: migrate
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          env:
+            - name: DATABASE_URL
+              value: "{{ .Values.config.databaseUrl }}"
+          command: ["sh","-lc"]
+          args: ["alembic upgrade head"]
       containers:
         - name: {{ .Chart.Name }}
           {{- with .Values.securityContext }}

@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "opsbox_common"
+version = "0.1.0"
+description = "Shared settings/db for API + worker"
+authors = [{ name = "OpsBox Team" }]
+dependencies = [
+    "SQLAlchemy>=2.0",
+    "psycopg[binary]>=3.1",  # if you use Postgres
+    "redis>=5.0",
+    "rq>=1.15"
+]
+
+[tool.setuptools.packages.find]
+where = ["."]

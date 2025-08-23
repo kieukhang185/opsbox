@@ -11,8 +11,8 @@ all:
 
 build:
 	$(info    ⚡ Building images...)
-	docker build -t opsbox-api:dev api
-	docker build -t opsbox-worker:dev worker
+	docker build -f api/Dockerfile -t opsbox-api:dev .
+	docker build -f worker/Dockerfile -t opsbox-worker:dev .
 
 deploy:
 	$(info    ⚡ Deploying application...)

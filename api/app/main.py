@@ -2,10 +2,10 @@ from typing import Annotated, TypeAlias
 from uuid import UUID
 
 from fastapi import Depends, FastAPI, HTTPException
+from opsbox_common.database import get_db, init_db
 from sqlalchemy.orm import Session
 
 from . import crud
-from .database import get_db, init_db
 from .schemas import TaskCreate, TaskOut, TaskUpdate
 
 app = FastAPI(

@@ -4,12 +4,11 @@ import traceback
 from datetime import UTC, datetime
 from uuid import UUID
 
+from opsbox_common.database import QUEUE_NAME, REDIS_URL, SessionLocal
+from opsbox_common.models import Task, TaskStatus
 from redis import Redis
 from rq import Queue, Worker
 from sqlalchemy.exc import SQLAlchemyError
-
-from api.app.database import QUEUE_NAME, REDIS_URL, SessionLocal
-from api.app.models import Task, TaskStatus
 
 
 def run_task(task_id: UUID) -> str:

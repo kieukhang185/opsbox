@@ -1,0 +1,9 @@
+Metadata-Version: 2.4
+Name: opsbox_common
+Version: 0.1.0
+Summary: Shared settings/db for API + worker
+Author: OpsBox Team
+Requires-Dist: SQLAlchemy>=2.0
+Requires-Dist: psycopg[binary]>=3.1
+Requires-Dist: redis>=5.0
+Requires-Dist: rq>=1.15
