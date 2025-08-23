@@ -2,12 +2,10 @@
 A small, real service (API + worker) and all the DevOps around it—containers, Kubernetes, CI/CD, observability, security—so you become production-fluent in Python and Bash.
 
 ## Tools
-```bash
-python3 --version 
-Python 3.12.3
-
-helm 3.17.4
-```
+|      Tools    |    Version    |      Tools    |    Version    |
+| ------------- | ------------- | ------------- | ------------- |
+|    Python     |     3.12.3    |      Kind     |    v0.23.0    |
+|     Helm      |     3.17.4    |     Kubectl   |    v1.33.4    |
 
 ### Setup python venv
 ```bash

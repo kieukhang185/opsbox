@@ -60,6 +60,16 @@ spec:
           volumeMounts:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          env:
+          - name: REDIS_URL
+            value: "{{ .Values.config.redisUrl }}"
+          - name: DATABASE_URL
+            value: "{{ .Values.config.databaseUrl }}"
+          - name: QUEUE_NAME
+            value: "{{ .Values.config.queueName }}"
+          - name: PYTHONPATH
+            value: "/app"
+          command: ["python", "-m", "app.worker"]
       {{- with .Values.volumes }}
       volumes:
         {{- toYaml . | nindent 8 }}
@@ -76,6 +86,4 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      env:
-        - name: REDIS_URL
-          value: "{{ .Values.config.redisUrl }}"
+
