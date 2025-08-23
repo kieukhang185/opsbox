@@ -129,3 +129,10 @@ affinity: {}
 
 config:
   redisUrl: "redis://redis-master.dev.svc.cluster.local:6379/0"
+  databaseUrl: "postgresql+psycopg://postgres:postgres@pg-postgresql.dev.svc.cluster.local:5432/postgres"
+  queueName: "default"
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi

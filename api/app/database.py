@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./app/opsbox.db")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./app/data/opsbox.db")
 
 # SQLite needs check_same_thread=False for multithreaded TestClient
 connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}

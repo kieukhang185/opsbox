@@ -38,10 +38,17 @@ podAnnotations: {}
 # For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
 podLabels: {}
 
-podSecurityContext: {}
-  # fsGroup: 2000
+containerPort: 8000
 
-securityContext: {}
+podSecurityContext:
+  fsGroup: 10001
+
+securityContext:
+  securityContext:
+  runAsUser: 10001
+  runAsGroup: 10001
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
   # capabilities:
   #   drop:
   #   - ALL
@@ -88,12 +95,12 @@ resources: {}
 # This is to setup the liveness and readiness probes more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
 livenessProbe:
   httpGet:
-    path: /
-    port: http
+    path: /health
+    port: 8000
 readinessProbe:
   httpGet:
-    path: /
-    port: http
+    path: /health
+    port: 8000
 
 # This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
 autoscaling:
@@ -104,14 +111,18 @@ autoscaling:
   # targetMemoryUtilizationPercentage: 80
 
 # Additional volumes on the output Deployment definition.
-volumes: []
+volumes:
+  - name: data
+    emptyDir: {}
 # - name: foo
 #   secret:
 #     secretName: mysecret
 #     optional: false
 
 # Additional volumeMounts on the output Deployment definition.
-volumeMounts: []
+volumeMounts:
+  - name: data
+    mountPath: /app/app/data
 # - name: foo
 #   mountPath: "/etc/foo"
 #   readOnly: true
@@ -122,5 +133,8 @@ tolerations: []
 
 affinity: {}
 
-config:
-  redisUrl: "redis://redis-master.dev.svc.cluster.local:6379/0"
+env:
+  - name: REDIS_URL
+    value: "redis://redis-master.dev.svc.cluster.local:6379/0"
+  - name: DATABASE_URL
+    value: sqlite:////app/app/data/opsbox.db

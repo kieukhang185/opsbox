@@ -42,6 +42,17 @@ helm upgrade --install worker ./ops/helm/worker -n dev \
 kubectl -n dev rollout status statefulset/redis-master
 kubectl -n dev rollout status deploy/api
 kubectl -n dev port-forward svc/api 8080:80 >/tmp/pf.log 2>&1 &
-sleep 2
-# shellcheck disable=SC2015
-curl -sf http://127.0.0.1:8080/health | grep -q '"ok"' && echo "SMOKE: OK" || (echo "SMOKE: FAIL"; exit 1)
+
+time_sleep=30
+retry=3
+while [ $retry -gt 0 ]; do
+  if curl -sf "http://127.0.0.1:8080/health" | grep -q '"ok"'; then
+    echo "SMOKE: OK"
+    exit 0
+  fi
+  echo "Waiting ${time_sleep}s for port-forward to be ready..."
+  sleep "${time_sleep}"
+  retry=$((retry - 1))
+done
+echo "SMOKE: FAIL"
+exit 1

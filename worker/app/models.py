@@ -5,14 +5,14 @@ from datetime import datetime
 from sqlalchemy import Column, DateTime, Enum, String
 from sqlalchemy.dialects.postgresql import UUID
 
-from .database import Base
+from api.app.database import Base
 
 
 class TaskStatus(enum.Enum):
     NEW = "NEW"
     PENDING = "PENDING"
-    RUNNING = "RUNNING"
-    SUCCEEDED = "SUCCEEDED"
+    IN_PROGRESS = "IN_PROGRESS"
+    COMPLETED = "COMPLETED"
     FAILED = "FAILED"
 
 

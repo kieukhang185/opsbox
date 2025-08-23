@@ -3,3 +3,6 @@ uvicorn[standard]>=0.30.0
 SQLAlchemy>=2.0.25
 pydantic>=1.10.14
 pytest>=8.0.0
+rq>=1.15.1
+redis>=5.0.0
+alembic

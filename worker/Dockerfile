@@ -14,4 +14,4 @@ COPY app ./app
 
 USER app
 
-CMD ["python", "-c", "import time; print('worker up'); time.sleep(3600)"]
+CMD ["python", "-m", "app/worker.py"]
