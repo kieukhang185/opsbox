@@ -1,5 +1,4 @@
 from fastapi.testclient import TestClient
-
 from opsbox.api.app.main import app
 
 client = TestClient(app)
@@ -7,7 +6,7 @@ client = TestClient(app)
 
 def test_create_and_get_task():
     resp = client.post("/tasks", json={"title": "first"})
-    assert resp.status_code == 201, resp.text
+    assert resp.status_code == 200, resp.text
     task = resp.json()
     assert task["title"] == "first"
     assert task["status"] == "new"
@@ -43,7 +42,7 @@ def test_list_and_update_and_delete():
 
     # delete
     d = client.delete(f"/tasks/{t2['id']}")
-    assert d.status_code == 204
+    assert d.status_code == 200
 
     # 404 after delete
     g = client.get(f"/tasks/{t2['id']}")

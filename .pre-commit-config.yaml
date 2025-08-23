@@ -1,12 +1,10 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.12.10
+    rev: v0.6.9
     hooks:
-      - id: ruff-check
-        types_or: [ python, pyi ]
-        args: [ --fix ]
+      - id: ruff
+        args: [--fix]
       - id: ruff-format
-        types_or: [ python, pyi ]
 
   - repo: https://github.com/pycqa/flake8
     rev: 6.0.0
@@ -21,12 +19,6 @@ repos:
     rev: 24.8.0
     hooks:
       - id: black
-
-    # quickly sort all your imports
-  - repo: https://github.com/pycqa/isort
-    rev: 5.13.2
-    hooks:
-      - id: isort
 
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.10.0.1

@@ -3,11 +3,11 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from .models import Task, TaskStatus
-from .schemas import TaskUpdate
+from .schemas import TaskCreate, TaskUpdate
 
 
-def create(db: Session, title: str) -> Task:
-    task = Task(title=title, status=TaskStatus.NEW)
+def create(db: Session, payload: TaskCreate) -> Task:
+    task = Task(**payload.dict(), status=TaskStatus.NEW)
     db.add(task)
     db.commit()
     db.refresh(task)
