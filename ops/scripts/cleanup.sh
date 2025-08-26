@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-DRY_RUN=1
+DRY_RUN=0
 DEEP_CLEAN=0
 
 log() { printf "\033[1;36m==> %s\033[0m\n" "$*"; }
@@ -13,7 +13,8 @@ run(){
         info "Dry run: $*"
     else
         log "Running: $*"
-        "$@"
+        # shellcheck disable=SC2294
+        eval "$@"
     fi
 }
 
@@ -219,7 +220,6 @@ main() {
   cleanup_docker
   cleanup_containerd
   cleanup_kind
-  cleanup_k3d
   cleanup_minikube
   cleanup_kubectl
   cleanup_helm

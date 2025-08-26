@@ -60,16 +60,12 @@ spec:
           volumeMounts:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          {{- with .Values.env }}
           env:
-          - name: REDIS_URL
-            value: "{{ .Values.config.redisUrl }}"
-          - name: DATABASE_URL
-            value: "{{ .Values.config.databaseUrl }}"
-          - name: QUEUE_NAME
-            value: "{{ .Values.config.queueName }}"
-          - name: PYTHONPATH
-            value: "/app"
-          command: ["python", "-m", "app.worker"]
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          command: ["celery"]
+          args: ["-A", "app.tasks", "worker", "-l", "info", "-Q", "default", "-c", "1"]
       {{- with .Values.volumes }}
       volumes:
         {{- toYaml . | nindent 8 }}

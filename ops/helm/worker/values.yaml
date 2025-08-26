@@ -109,14 +109,18 @@ autoscaling:
   # targetMemoryUtilizationPercentage: 80
 
 # Additional volumes on the output Deployment definition.
-volumes: []
+volumes:
+  - name: data
+    emptyDir: {}
 # - name: foo
 #   secret:
 #     secretName: mysecret
 #     optional: false
 
 # Additional volumeMounts on the output Deployment definition.
-volumeMounts: []
+volumeMounts:
+  - name: data
+    mountPath: /app/app/data
 # - name: foo
 #   mountPath: "/etc/foo"
 #   readOnly: true
@@ -127,10 +131,17 @@ tolerations: []
 
 affinity: {}
 
-config:
-  redisUrl: "redis://redis-master.dev.svc.cluster.local:6379/0"
-  databaseUrl: "postgresql+psycopg://postgres:postgres@pg-postgresql.dev.svc.cluster.local:5432/postgres"
-  queueName: "default"
+env:
+  - name: RESULT_BACKEND
+    value: "redis://redis-master.dev.svc.cluster.local:6379/1"
+  - name: DATABASE_URL
+    value: "postgresql+psycopg://postgres:postgres@pg-postgresql.dev.svc.cluster.local:5432/postgres"
+  - name: BROKER_URL
+    value: "amqp://opsbox:opsbox@rabbitmq.dev.svc.cluster.local:5672//"
+  - name: QUEUE_NAME
+    value: "default"
+  - name: PYTHONPATH
+    value: "/app"
 
 resources:
   requests:

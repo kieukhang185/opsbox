@@ -10,6 +10,17 @@ setup_tool(){
   install_"$1"
 }
 
+exist_image(){
+  # shellcheck disable=SC2086
+  if [[ -n "$(docker images -q $1 2> /dev/null)" ]]; then
+    echo "Image $1 existed..."
+    return 0
+  else
+    echo "Image $1 does not exist, start building..."
+    return 1
+  fi
+}
+
 need() { command -v "$1" >/dev/null || { echo "Missing: $1"; setup_tool "$1"; }; }
 for bin in docker kind kubectl helm; do need "$bin"; done
 
@@ -20,12 +31,17 @@ fi
 
 # Postgres & Redis (bitnami)
 helm repo add bitnami https://charts.bitnami.com/bitnami
-helm upgrade --install pg bitnami/postgresql --set auth.postgresPassword=postgres --namespace dev --create-namespace
+helm upgrade --install pg bitnami/postgresql \
+  --set auth.postgresPassword=postgres \
+  --set primary.resources.requests.cpu=50m \
+  --set primary.resources.requests.memory=128Mi \
+  --namespace dev --create-namespace
 helm upgrade --install redis bitnami/redis --set architecture=standalone --namespace dev -f ops/helm/redis/values.dev.yaml
+helm upgrade --install rabbitmq bitnami/rabbitmq -n dev -f ops/helm/rabbitmq/values.dev.yaml
 
 # Build images and load into kind
-docker build -f api/Dockerfile -t opsbox-api:dev .
-docker build -f worker/Dockerfile -t opsbox-worker:dev .
+exist_image "opsbox-api:dev" || docker build -f api/Dockerfile -t opsbox-api:dev .
+exist_image "opsbox-worker:dev" || docker build -f worker/Dockerfile -t opsbox-worker:dev .
 kind load docker-image opsbox-api:dev --name "$CLUSTER"
 kind load docker-image opsbox-worker:dev --name "$CLUSTER"
 
@@ -41,6 +57,7 @@ helm upgrade --install worker ./ops/helm/worker -n dev \
 
 # Smoke: port-forward API and hit /health
 kubectl -n dev rollout status statefulset/redis-master
+kubectl -n dev rollout status statefulset/rabbitmq
 kubectl -n dev rollout status deploy/api
 kubectl -n dev port-forward svc/api 8080:80 >/tmp/pf.log 2>&1 &
 

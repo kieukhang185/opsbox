@@ -1,4 +1,5 @@
-from opsbox_common.database import DATABASE_URL, Base
+from opsbox_common.database import Base
+from opsbox_common.settings import DATABASE_URL
 from sqlalchemy import pool
 from sqlalchemy.engine import create_engine
 
