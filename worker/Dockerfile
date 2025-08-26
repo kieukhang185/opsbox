@@ -16,4 +16,6 @@ COPY shared/opsbox_common ./opsbox_common
 
 USER app
 
-CMD ["python", "-m", "app/worker.py"]
+ENV PYTHONPATH=/app
+
+CMD ["celery", "-A", "app.celery_app.celery_app", "worker", "--loglevel=info", "-Q", "tasks", "-n", "worker@%h"]

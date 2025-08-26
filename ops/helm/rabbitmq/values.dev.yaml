@@ -1,0 +1,15 @@
+auth:
+  username: opsbox
+  password: opsbox
+clustering:
+  enabled: false
+service:
+  type: ClusterIP
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: false

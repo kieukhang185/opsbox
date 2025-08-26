@@ -9,7 +9,7 @@ description = "Shared settings/db for API + worker"
 authors = [{ name = "OpsBox Team" }]
 dependencies = [
     "SQLAlchemy>=2.0",
-    "psycopg[binary]>=3.1",  # if you use Postgres
+    "psycopg[binary]>=3.1",
     "redis>=5.0",
     "rq>=1.15"
 ]

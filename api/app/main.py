@@ -1,7 +1,7 @@
 from typing import Annotated, TypeAlias
 from uuid import UUID
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, status
 from opsbox_common.database import get_db, init_db
 from sqlalchemy.orm import Session
 
@@ -59,3 +59,11 @@ def delete_task(task_id: UUID, db: DBSession):
     if not status:
         raise HTTPException(status_code=404, detail="Task not found")
     return None
+
+
+@app.post("/tasks/{task_id}/run", status_code=status.HTTP_201_CREATED)
+def run_task_endpoint(task_id: UUID, db: DBSession):
+    task = get_task(task_id, db)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return crud.run_task(db, task_id)
