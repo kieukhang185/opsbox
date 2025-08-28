@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "worker.fullname" . }}-beat
+  labels:
+    app: {{ include "worker.name" . }}
+    component: beat
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ include "worker.name" . }}
+      component: beat
+  template:
+    metadata:
+      labels:
+        app: {{ include "worker.name" . }}
+        component: beat
+    spec:
+      containers:
+        - name: beat
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          securityContext:
+            runAsUser: 10001
+            runAsGroup: 10001
+            readOnlyRootFilesystem: true
+          {{- with .Values.env }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          command: ["celery", "-A", "app.tasks", "beat", "--loglevel=info", "-s", "/var/lib/celery/beat-schedule"]
+      {{- with .Values.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
