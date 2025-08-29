@@ -1,12 +1,18 @@
+import time
 from typing import Annotated, TypeAlias
 from uuid import UUID
 
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, Response, status
 from opsbox_common.database import get_db, init_db
+from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
 from sqlalchemy.orm import Session
 
 from . import crud
 from .schemas import TaskCreate, TaskOut, TaskUpdate
+
+# Define metrics
+REQS = Counter("api_requests_total", "API requests", ["method", "path", "status"])
+LAT = Histogram("api_request_latency_seconds", "API request latency", ["method", "path"])
 
 app = FastAPI(
     title="OpsBox API",
@@ -22,6 +28,19 @@ def on_startup():
 DBSession: TypeAlias = Annotated[Session, Depends(get_db)]
 
 
+# Create middleware records
+@app.middleware("http")
+async def metrics_middleware(request, call_next):
+    start = time.perf_counter()
+    response = await call_next(request)
+    duration = time.perf_counter() - start
+    # use route.path if available to avoid high-cardinality URLs
+    path = getattr(request.scope.get("route"), "path", request.url.path)
+    REQS.labels(request.method, path, str(response.status_code)).inc()
+    LAT.labels(request.method, path).observe(duration)
+    return response
+
+
 @app.get("/health")
 def read_health():
     return {"status": "ok"}
@@ -30,6 +49,12 @@ def read_health():
 @app.post("/tasks/", response_model=TaskOut)
 def create_task(payload: TaskCreate, db: DBSession):
     return crud.create(db, payload)
+
+
+@app.get("/metrics")
+def read_metrics():
+    """Metrics endpoint exposes value in Prometheus format"""
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
 @app.get("/tasks/", response_model=list[TaskOut])

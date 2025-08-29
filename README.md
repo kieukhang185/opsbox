@@ -25,12 +25,12 @@ pre-commit run --all-files
 ```
 
 ### Developer workflow
-- List targets: `make help`
-- Build images: `make build`
-- Deploy: `make deploy`
-- Test: `make smoke`
-- Uninstall Helm releases, delete namespace, kill port-forward: `make down`
-- Cleanup: `make clean`
-- Reset: `make down + make clean`
-- Nuke: `make nuke`
-- Clean docker: `make prune`
+- `make help`: List all targets avaliable on Makefile
+- `make build`: Build api/worker images
+- `make deploy`: Deploy all applivations (api, worker, postgres, rabbitmq,...)
+- `make smoke`: Test api app `/health`
+- `make down`: Uninstall Helm releases, delete namespace, kill port-forward
+- `make clean`: Cleanup docker/docker images
+- `make down + make clean`: Reset k8s
+- `make nuke`: Destroy kind and cleanup
+- `make prune`: Clean docker

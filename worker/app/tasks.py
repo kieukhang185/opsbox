@@ -4,6 +4,7 @@ from celery.schedules import crontab
 
 from .celery_app import celery_app
 from .job_logic import cleanup_old_tasks_impl, run_task_imp
+from .metrics import CLEANUPS
 
 RETENTION_MINUTES = int(os.getenv("RETENTION_MINUTES", "5"))
 
@@ -16,7 +17,9 @@ def run_task(task_id: str) -> str:
 
 @celery_app.task(name="tasks.cleanup_old_tasks")
 def cleanup_old_tasks() -> int:
-    return cleanup_old_tasks_impl(RETENTION_MINUTES)
+    n = cleanup_old_tasks_impl(RETENTION_MINUTES)
+    CLEANUPS.inc(n)
+    return n
 
 
 # Configure Beat schedule (hourly). You can change to every N minutes if desired.

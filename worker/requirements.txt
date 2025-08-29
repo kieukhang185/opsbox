@@ -3,3 +3,4 @@ redis>=5.0.0
 SQLAlchemy>=2
 psycopg[binary]>=3.1
 celery>=5.3
+prometheus-client

@@ -7,8 +7,8 @@ metadata:
 spec:
   type: {{ .Values.service.type }}
   ports:
-    - name: http
-      port: 80
-      targetPort: 80
+    - name: metrics
+      port: 9090
+      targetPort: 9090
   selector:
     {{- include "worker.selectorLabels" . | nindent 4 }}
