@@ -29,6 +29,15 @@ if ! kind get clusters | grep -q "^${CLUSTER}$"; then
   kind create cluster --name "$CLUSTER"
 fi
 
+# Create monitor namespace for prometheus and grafana
+kubectl create ns monitoring --dry-run=client -o yaml | kubectl apply -f -
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
+  -n monitoring \
+  --set grafana.enabled=true \
+  --set grafana.service.type=ClusterIP \
+  --set prometheus.prometheusSpec.scrapeInterval="15s"
+
 # Postgres & Redis (bitnami)
 helm repo add bitnami https://charts.bitnami.com/bitnami
 helm upgrade --install pg bitnami/postgresql \
@@ -71,7 +80,7 @@ while [ $retry -gt 0 ]; do
   echo "Waiting ${time_sleep}s for port-forward to be ready..."
   sleep "${time_sleep}"
   retry=$((retry - 1))
+  [[ $retry -eq 0 ]] && eval "echo 'SMOKE: FAIL' && exit 1"
 done
+
 popd
-echo "SMOKE: FAIL"
-exit 1

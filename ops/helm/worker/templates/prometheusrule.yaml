@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "worker.fullname" . }}-rules
+  labels:
+    release: monitoring
+spec:
+  groups:
+  - name: worker.rules
+    rules:
+    - alert: WorkerJobFailures
+      expr: increase(worker_jobs_total{result="failed"}[5m]) > 0
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Worker jobs failing"
+        description: "One or more jobs failed in the last 5 minutes."
