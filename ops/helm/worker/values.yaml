@@ -148,6 +148,8 @@ env:
     value: "/app"
   - name: RETENTION_MINUTES
     value: "5"
+  - name: METRICS_PORT
+    value: "9090"
 
 resources:
   requests:
