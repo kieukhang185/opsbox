@@ -6,8 +6,6 @@ from opsbox_common.database import SessionLocal
 from opsbox_common.models import Task, TaskStatus
 from sqlalchemy import delete
 
-from .metrics import JOBS
-
 
 def run_task_imp(task_id: str) -> str:
     db = SessionLocal()
@@ -18,18 +16,15 @@ def run_task_imp(task_id: str) -> str:
 
         # mark running (idempotent)
         task.status = TaskStatus.RUNNING
-        JOBS.labels("RUNNING").inc()
         db.add(task)
         db.commit()
 
         time.sleep(random.uniform(0.5, 1.5))
         if random.random() < 0.85:
             task.status = TaskStatus.SUCCEEDED
-            JOBS.labels("SUCCEEDED").inc()
             task.result = f"Processed at {datetime.now(UTC).isoformat()}"
         else:
             task.status = TaskStatus.FAILED
-            JOBS.labels("FAILED").inc()
             task.result = "simulated failure"
         db.add(task)
         db.commit()
