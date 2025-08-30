@@ -1,0 +1,22 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "api.fullname" . }}-rules
+  labels:
+    release: monitoring
+spec:
+  groups:
+  - name: api.rules
+    rules:
+    - alert: ApiHighErrorRate
+      expr: |
+        sum(rate(api_requests_total{status=~"5.."}[5m]))
+        /
+        sum(rate(api_requests_total[5m])) > 0.05
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "API error rate >5% (5m)"
+        description: "High error ratio over the last 5 minutes."
+

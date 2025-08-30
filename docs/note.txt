@@ -1,3 +1,12 @@
 # check api initcontainer log
 kubectl -n dev logs api-fb6cf6845-5sglk -c migrate --previous --timestamps
 kubectl -n dev describe pod api-fb6cf6845-2lnfh | sed -n '1,200p'
+
+# get all monitoring resource
+k -n monitoring -get all
+
+# port-forward for prometheus
+kubectl -n monitoring port-forward svc/monitoring-kube-prometheus-prometheus 9090:9090
+
+# port-forward for grafana
+kubectl -n monitoring port-forward svc/monitoring-grafana 3000:80 &

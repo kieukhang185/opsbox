@@ -105,7 +105,7 @@ cleanup_kind(){
                 while read -r c; do
                     [[ -z $c ]] && continue
                     info "Deleting kind cluster $c"
-                    run "kind delete cluster --name \$c\""
+                    run "kind delete cluster --name $c"
                 done <<< "${cluster}"
             else
                 info "No kind clusters found"
@@ -206,10 +206,11 @@ cleanup_logs_misc() {
 
 summary_big_files() {
   log "Top disk consumers (preview)"
-  run "sudo du -hx / | sort -rh | head -n 20"
+#   sudo du -hx / | sort -rh | head -n 20
   if exists docker; then
     run "docker system df"
   fi
+  echo "TEST"
 }
 
 main() {
