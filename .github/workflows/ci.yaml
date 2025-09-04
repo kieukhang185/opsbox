@@ -55,7 +55,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r api/requirements.txt
           pip install -r worker/requirements.txt
-          pip install alembic pytest ruff
+          pip install alembic pytest ruff pika
       - name: Lint (ruff)
         run: |
           ruff check .
