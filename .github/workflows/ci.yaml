@@ -76,6 +76,8 @@ jobs:
                   time.sleep(2)
           PY
       - name: Alambic upgrade
+        env:
+          PYTHONPATH: .
         run: |
           alembic upgrade head
       - name: Pytest
