@@ -93,12 +93,12 @@ jobs:
           docker build --file api/Dockerfile --tag opsbox/api:ci
           docker build --file worker/Dockerfile --tag opsbox/worker:ci
       - name: SBOM (api)
-        uses: anchore/sbom-action@v2
+        uses: anchore/sbom-action@v0
         with:
           image: opsbox/api:ci
           artifact-name: "sbom-api.spdx.json"
       - name: SBOM (worker)
-        uses: anchore/sbom-action@v2
+        uses: anchore/sbom-action@v0
         with:
           image: opsbox/worker:ci
           artifact-name: "sbom-worker.spdx.json"
