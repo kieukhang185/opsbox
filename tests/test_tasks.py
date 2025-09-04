@@ -1,5 +1,6 @@
 from fastapi.testclient import TestClient
-from opsbox.api.app.main import app
+
+from api.app.main import app
 
 client = TestClient(app)
 
@@ -9,7 +10,7 @@ def test_create_and_get_task():
     assert resp.status_code == 200, resp.text
     task = resp.json()
     assert task["title"] == "first"
-    assert task["status"] == "new"
+    assert task["status"] == "NEW"
     task_id = task["id"]
 
     # Get by id
@@ -34,10 +35,13 @@ def test_list_and_update_and_delete():
     assert t1["id"] in ids and t2["id"] in ids
 
     # update
-    u = client.put(f"/tasks/{t1['id']}", json={"status": "succeeded", "result": "ok"})
+    u = client.put(
+        f"/tasks/{t1['id']}", json={"title": "test11", "status": "SUCCEEDED", "result": "ok"}
+    )
+    print(u.json())
     assert u.status_code == 200
     updated = u.json()
-    assert updated["status"] == "succeeded"
+    assert updated["status"] == "SUCCEEDED"
     assert updated["result"] == "ok"
 
     # delete
@@ -50,5 +54,8 @@ def test_list_and_update_and_delete():
 
 
 def test_put_not_found():
-    r = client.put("/tasks/c5256521-1111-43e8-9748-6f033cd4a3af", json={"title": "x"})
+    r = client.put(
+        "/tasks/c5256521-1111-43e8-9748-6f033cd4a3af",
+        json={"title": "test11", "status": "SUCCEEDED", "result": "ok"},
+    )
     assert r.status_code == 404
