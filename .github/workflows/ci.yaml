@@ -83,6 +83,7 @@ jobs:
         env:
           PYTHONPATH: .
         run: |
+          export PYTHONPATH=$(pwd)
           pytest -q
           coverage run -m pytest
           coverage report -m

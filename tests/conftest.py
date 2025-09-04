@@ -1,9 +1,10 @@
 import pytest
-from opsbox.api.app.database import Base, get_db
-from opsbox.api.app.main import app
+from opsbox_common.database import Base, get_db
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
+
+from api.app.main import app
 
 
 @pytest.fixture(scope="session")
