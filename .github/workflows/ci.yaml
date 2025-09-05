@@ -98,12 +98,12 @@ jobs:
       - name: SBOM (api)
         uses: anchore/sbom-action@v0
         with:
-          image: opsbox/api:ci
+          image: opsbox-api:ci
           artifact-name: "sbom-api.spdx.json"
       - name: SBOM (worker)
         uses: anchore/sbom-action@v0
         with:
-          image: opsbox/worker:ci
+          image: opsbox-worker:ci
           artifact-name: "sbom-worker.spdx.json"
       - name: Trivy scan API
         uses: aquasecurity/trivy-action@0.24.0
