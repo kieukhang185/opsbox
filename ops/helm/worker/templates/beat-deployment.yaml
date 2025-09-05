@@ -5,6 +5,10 @@ metadata:
   labels:
     app: {{ include "worker.name" . }}
     component: beat
+  {{- with .Values.podAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   replicas: 1
   selector:

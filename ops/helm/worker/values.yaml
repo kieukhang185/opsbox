@@ -136,14 +136,6 @@ tolerations: []
 affinity: {}
 
 env:
-  - name: RESULT_BACKEND
-    value: "redis://redis-master.dev.svc.cluster.local:6379/1"
-  - name: DATABASE_URL
-    value: "postgresql+psycopg://postgres:postgres@pg-postgresql.dev.svc.cluster.local:5432/postgres"
-  - name: BROKER_URL
-    value: "amqp://opsbox:opsbox@rabbitmq.dev.svc.cluster.local:5672//"
-  - name: QUEUE_NAME
-    value: "default"
   - name: PYTHONPATH
     value: "/app"
   - name: RETENTION_MINUTES

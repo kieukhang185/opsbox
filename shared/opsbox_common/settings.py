@@ -9,7 +9,7 @@ DATABASE_URL = os.getenv(
 
 # Redis (broker + backend)
 BROKER_URL = os.getenv("BROKER_URL", "amqp://opsbox:opsbox@rabbitmq.dev.svc.cluster.local:5672//")
-RESULT_BACKEND = os.getenv("RESULT_BACKEND", "redis://redis-master.dev.svc.cluster.local:6379/1")
+RESULT_BACKEND = os.getenv("RESULT_BACKEND", "rpc://")
 
 # Celery
 QUEUE_NAME = os.getenv("QUEUE_NAME", "tasks")

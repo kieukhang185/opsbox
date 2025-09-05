@@ -10,6 +10,16 @@ setup_tool(){
   install_"$1"
 }
 
+exist_file(){
+  if [[ -f $1 ]]; then
+    echo "File $1 existed..."
+    return 0
+  else
+    echo "File $1 does not exist, please check..."
+    return 1
+  fi
+}
+
 exist_image(){
   # shellcheck disable=SC2086
   if [[ -n "$(docker images -q $1 2> /dev/null)" ]]; then
@@ -39,12 +49,13 @@ helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
   --set prometheus.prometheusSpec.scrapeInterval="15s"
 
 # Postgres (bitnami)
+kubectl create namespace dev --dry-run=client -o yaml | kubectl apply -f -
 helm repo add bitnami https://charts.bitnami.com/bitnami
 helm upgrade --install pg bitnami/postgresql \
   --set auth.postgresPassword=postgres \
   --set primary.resources.requests.cpu=50m \
   --set primary.resources.requests.memory=128Mi \
-  --namespace dev --create-namespace
+  --namespace dev
 helm upgrade --install rabbitmq bitnami/rabbitmq -n dev -f ops/helm/rabbitmq/values.dev.yaml
 
 # Build images and load into kind
@@ -54,6 +65,10 @@ kind load docker-image opsbox-api:dev --name "$CLUSTER"
 kind load docker-image opsbox-worker:dev --name "$CLUSTER"
 
 # Install API
+export SOPS_AGE_KEY_FILE="${WORKSPACE}/ops/infra/age.key"
+export SOPS_CONFIG="${WORKSPACE}/.sops.yaml"
+exist_file "$SOPS_AGE_KEY_FILE" || { echo "Please create age key file at ${SOPS_AGE_KEY_FILE}"; exit 1; }
+exist_file "$SOPS_CONFIG" || { echo "Please create sops config file at ${SOPS_CONFIG}"; exit 1; }
 sops -d ops/secrets/dev.app.enc.yaml | kubectl apply -f - -n dev
 helm upgrade --install api ./ops/helm/api -n dev \
   --set image.repository=opsbox-api --set image.tag=dev \
