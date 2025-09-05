@@ -3,7 +3,7 @@ on:
   pull_request:
     branches: ["main"]
   push:
-    branches: ["dev"] # add dev branch for testing
+    branches: ["main"]
 jobs:
   test-and-build:
     runs-on: ubuntu-latest
