@@ -1,0 +1,48 @@
+{
+  "title": "OpsBox API",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Req/s (total)",
+      "gridPos": {"x": 0, "y": 0, "w": 6, "h": 4},
+      "targets": [
+        {"expr": "sum(rate(api_requests_total[5m]))", "legendFormat": "rps"}
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Error rate (5xx, %)",
+      "gridPos": {"x": 6, "y": 0, "w": 6, "h": 4},
+      "targets": [
+        {"expr": "100 * (sum(rate(api_requests_total{status=~\"5..\"}[5m])) / sum(rate(api_requests_total[5m])))"}
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Req/s by path",
+      "gridPos": {"x": 0, "y": 4, "w": 12, "h": 6},
+      "targets": [
+        {"expr": "sum by (path) (rate(api_requests_total[5m]))", "legendFormat": "{{path}}"}
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Latency p50 (s)",
+      "gridPos": {"x": 0, "y": 10, "w": 6, "h": 4},
+      "targets": [
+        {"expr": "histogram_quantile(0.50, sum by (le) (rate(api_request_latency_seconds_bucket[5m])))"}
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Latency p95 (s)",
+      "gridPos": {"x": 6, "y": 10, "w": 6, "h": 4},
+      "targets": [
+        {"expr": "histogram_quantile(0.95, sum by (le) (rate(api_request_latency_seconds_bucket[5m])))"}
+      ]
+    }
+  ]
+}

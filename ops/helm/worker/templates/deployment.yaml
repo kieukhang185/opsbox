@@ -65,7 +65,7 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           command: ["celery"]
-          args: ["-A", "app.tasks", "worker", "-l", "info", "-Q", "default", "-c", "1"]
+          args: ["-A", "app.tasks", "worker", "-P", "solo", "-l", "info", "-Q", "default", "-c", "1"]
       {{- with .Values.volumes }}
       volumes:
         {{- toYaml . | nindent 8 }}

@@ -83,7 +83,7 @@ def delete_task(task_id: UUID, db: DBSession):
     status = crud.delete(db, task_id)
     if not status:
         raise HTTPException(status_code=404, detail="Task not found")
-    return None
+    return {"status": "deleted"}
 
 
 @app.post("/tasks/{task_id}/run", status_code=status.HTTP_201_CREATED)

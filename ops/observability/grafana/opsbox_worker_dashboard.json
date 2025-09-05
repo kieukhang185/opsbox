@@ -1,0 +1,40 @@
+{
+  "title": "OpsBox Worker",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Jobs succeeded (5m)",
+      "gridPos": {"x": 0, "y": 0, "w": 4, "h": 4},
+      "targets": [
+        {"expr": "increase(worker_jobs_total{result=\"SUCCEEDED\"}[5m])"}
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Jobs failed (5m)",
+      "gridPos": {"x": 4, "y": 0, "w": 4, "h": 4},
+      "targets": [
+        {"expr": "increase(worker_jobs_total{result=\"FAILED\"}[5m])"}
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Cleanup deleted (5m)",
+      "gridPos": {"x": 8, "y": 0, "w": 4, "h": 4},
+      "targets": [
+        {"expr": "increase(worker_cleanups_total[5m])"}
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Job latency p95 (s)",
+      "gridPos": {"x": 0, "y": 4, "w": 12, "h": 6},
+      "targets": [
+        {"expr": "histogram_quantile(0.95, sum by (le) (rate(worker_job_latency_seconds_bucket[5m])))", "legendFormat": "p95"}
+      ]
+    }
+  ]
+}
