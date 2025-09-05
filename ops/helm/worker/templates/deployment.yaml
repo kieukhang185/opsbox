@@ -64,6 +64,9 @@ spec:
           env:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          envFrom:
+          - secretRef:
+              name: opsbox-app-secrets
           command: ["celery"]
           args: ["-A", "app.tasks", "worker", "-P", "solo", "-l", "info", "-Q", "default", "-c", "1"]
       {{- with .Values.volumes }}

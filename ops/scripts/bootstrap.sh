@@ -22,7 +22,7 @@ exist_image(){
 }
 
 need() { command -v "$1" >/dev/null || { echo "Missing: $1"; setup_tool "$1"; }; }
-for bin in docker kind kubectl helm; do need "$bin"; done
+for bin in docker kind kubectl helm sops; do need "$bin"; done
 
 CLUSTER=opsbox
 if ! kind get clusters | grep -q "^${CLUSTER}$"; then
@@ -38,14 +38,13 @@ helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
   --set grafana.service.type=ClusterIP \
   --set prometheus.prometheusSpec.scrapeInterval="15s"
 
-# Postgres & Redis (bitnami)
+# Postgres (bitnami)
 helm repo add bitnami https://charts.bitnami.com/bitnami
 helm upgrade --install pg bitnami/postgresql \
   --set auth.postgresPassword=postgres \
   --set primary.resources.requests.cpu=50m \
   --set primary.resources.requests.memory=128Mi \
   --namespace dev --create-namespace
-helm upgrade --install redis bitnami/redis --set architecture=standalone --namespace dev -f ops/helm/redis/values.dev.yaml
 helm upgrade --install rabbitmq bitnami/rabbitmq -n dev -f ops/helm/rabbitmq/values.dev.yaml
 
 # Build images and load into kind
@@ -55,6 +54,7 @@ kind load docker-image opsbox-api:dev --name "$CLUSTER"
 kind load docker-image opsbox-worker:dev --name "$CLUSTER"
 
 # Install API
+sops -d ops/secrets/dev.app.enc.yaml | kubectl apply -f - -n dev
 helm upgrade --install api ./ops/helm/api -n dev \
   --set image.repository=opsbox-api --set image.tag=dev \
   --set service.port=80 \
@@ -65,7 +65,6 @@ helm upgrade --install worker ./ops/helm/worker -n dev \
   --set image.repository=opsbox-worker --set image.tag=dev
 
 # Smoke: port-forward API and hit /health
-kubectl -n dev rollout status statefulset/redis-master
 kubectl -n dev rollout status statefulset/rabbitmq
 kubectl -n dev rollout status deploy/api
 kubectl -n dev port-forward svc/api 8080:80 >/tmp/pf.log 2>&1 &

@@ -105,6 +105,43 @@ ensure_helm(){
     fi
 }
 
+install_age(){
+    echo "⚡ Installing Age..."
+    sudo apt install -y age
+    cmd_check age && echo "✅ Age installed successfully: $(age --version)" || echo "Age installation failed"
+}
+
+ensure_age(){
+    if cmd_check age
+    then
+        echo "✅ Age present: $(age --version)"
+    else
+        install_age
+    fi
+}
+
+install_sops(){
+    echo "⚡ Installing SOPS..."
+    curl -LO https://github.com/getsops/sops/releases/download/v3.8.1/sops_3.8.1_amd64.deb
+    sudo dpkg -i sops_3.8.1_amd64.deb
+    rm -rf sops_3.8.1_amd64.deb
+    cmd_check sops && echo "✅ SOPS installed successfully: $(sops --version)" || echo "SOPS installation failed"
+}
+
+ensure_sops(){
+    if cmd_check sops
+    then
+        echo "✅ SOPS present: $(sops --version)"
+    else
+        install_sops
+    fi
+}
+
+secret_tool(){
+    ensure_age
+    ensure_sops
+}
+
 setup_k8s_tools(){
     echo "Setting up Kubernetes tools..."
     ensure_docker
