@@ -72,6 +72,9 @@ spec:
           env:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          envFrom:
+          - secretRef:
+              name: opsbox-app-secrets
       {{- with .Values.volumes }}
       volumes:
         {{- toYaml . | nindent 8 }}
