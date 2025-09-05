@@ -1,0 +1,9 @@
+pyproject.toml
+opsbox_cli/__init__.py
+opsbox_cli/main.py
+opsbox_cli.egg-info/PKG-INFO
+opsbox_cli.egg-info/SOURCES.txt
+opsbox_cli.egg-info/dependency_links.txt
+opsbox_cli.egg-info/entry_points.txt
+opsbox_cli.egg-info/requires.txt
+opsbox_cli.egg-info/top_level.txt

@@ -27,13 +27,21 @@ pre-commit install
 pre-commit run --all-files
 ```
 
+### Opsbox-cli
+```bash
+opsbox --tag dev # Build API & Worker docker images
+```
+
+
 ### Developer workflow
-- `make help`: List all targets avaliable on Makefile
-- `make build`: Build api/worker images
-- `make deploy`: Deploy all applivations (api, worker, postgres, rabbitmq,...)
-- `make smoke`: Test api app `/health`
-- `make down`: Uninstall Helm releases, delete namespace, kill port-forward
-- `make clean`: Cleanup docker/docker images
-- `make down + make clean`: Reset k8s
-- `make nuke`: Destroy kind and cleanup
-- `make prune`: Clean docker
+```bash
+make help   # List all targets avaliable on Makefile
+make build  # Build api/worker images
+make deploy # Deploy all applivations (api, worker, postgres, rabbitmq,...)
+make smoke  # Test api app `/health`
+make down   # Uninstall Helm releases, delete namespace, kill port-forward
+make clean  # Cleanup docker/docker images
+make reset  # make down + make clean: Reset k8s
+make nuke   # Destroy kind and cleanup
+make prune  # Clean docker
+```

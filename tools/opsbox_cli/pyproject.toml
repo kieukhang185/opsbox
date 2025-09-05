@@ -1,0 +1,7 @@
+[project]
+name = "opsbox-cli"
+version = "0.1.0"
+dependencies = ["typer[all]"]
+
+[project.scripts]
+opsbox = "opsbox_cli.main:app" 
