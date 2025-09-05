@@ -4,6 +4,10 @@ metadata:
   name: {{ include "api.fullname" . }}
   labels:
     {{- include "api.labels" . | nindent 4 }}
+  {{- with .Values.podAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
@@ -35,9 +39,9 @@ spec:
       initContainers:
         - name: migrate
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          env:
-            - name: DATABASE_URL
-              value: "{{ .Values.config.databaseUrl }}"
+          envFrom:
+          - secretRef:
+              name: opsbox-app-secrets
           command: ["sh","-lc"]
           args: ["alembic upgrade head"]
       containers:
