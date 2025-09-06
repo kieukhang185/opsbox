@@ -172,6 +172,8 @@ jobs:
         run: |
           # Needs AGE key in repo secret AGE_PRIVATE_KEY (already set for sops work)
           mkdir -p ~/.config/sops/age
+          curl -LO https://github.com/getsops/sops/releases/download/v3.8.1/sops_3.8.1_amd64.deb
+          sudo dpkg -i sops_3.8.1_amd64.deb
           printf '%s\n' "$AGE_PRIVATE_KEY" > ~/.config/sops/age/keys.txt
           sops -d ops/secrets/dev.app.enc.yaml | kubectl apply -f - -n ${{ env.NAMESPACE }}
         env:
