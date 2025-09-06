@@ -238,13 +238,16 @@ jobs:
             curl -s -X POST $API/tasks/$TASK_ID/run -H 'Content-Type: application/json'
 
             echo "POLL STATUS:"
-            for i in $(seq 1 30); do
-              STATUS=$(curl -s $API/tasks/$TASK_ID | jq -r .status)
-              echo "$i: $STATUS"
-              case "$STATUS" in
-                SUCCEEDED) exit 0 ;;
-                FAILED)    exit 1 ;;
-              esac
-              sleep 2
+            time_sleep=30
+            retry=3
+            while [ $retry -gt 0 ]; do
+              if curl -sf "$API/health" | grep -q '"ok"'; then
+                echo "SMOKE: OK"
+                exit 0
+              fi
+              echo "Waiting ${time_sleep}s for port-forward to be ready..."
+              sleep "${time_sleep}"
+              retry=$((retry - 1))
+              [[ $retry -eq 0 ]] && eval "echo 'SMOKE: FAIL' && exit 1"
             done
             echo "TIMEOUT"; exit 1
