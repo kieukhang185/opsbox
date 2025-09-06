@@ -142,6 +142,8 @@ jobs:
         with:
           cluster_name: opsbox
           wait: true
+
+      - name: Check kind cluster
         run: kubectl cluster-info --context kind-opsbox
 
       - name: Resolve image tags
