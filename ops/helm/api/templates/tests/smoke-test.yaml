@@ -7,69 +7,107 @@ metadata:
   annotations:
     "helm.sh/hook": test
 spec:
+  restartPolicy: Never
+  securityContext:
+    seccompProfile: { type: RuntimeDefault }
   containers:
-  containers:
-    - name: curl
-      image: curlimages/curl:8.8.0
+    - name: py
+      image: python:3.12-alpine
+      env:
+        - name: PYTHONDONTWRITEBYTECODE
+          value: "1"
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        - name: BASE_URL
+          value: "http://{{ include "api.fullname" . }}:{{ .Values.service.port }}{{ .Values.tests.basePath }}"
+        - name: HEALTH_PATH
+          value: "{{ .Values.health.path | default "/health" }}"
+        - name: CREATE_PATH
+          value: "{{ .Values.tests.createTaskPath }}"
+        - name: RUN_PATH_TPL
+          value: "{{ .Values.tests.runTaskPath }}"
+        - name: CREATE_BODY
+          value: '{{ tpl .Values.tests.createBody . | replace "\n" " " }}'
+        - name: AUTH_HEADER
+          valueFrom:
+            secretKeyRef:
+              name: api-test-secret
+              key: authorization
+              optional: true
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        allowPrivilegeEscalation: false
+        capabilities: { drop: ["ALL"] }
       command: ["/bin/sh","-c"]
       args:
         - |
           set -euo pipefail
-          apk add --no-cache curl jq
+          python - <<'PY'
+          import json, os, time, urllib.request, urllib.error, sys
 
-          BASE_URL="http://{{ include "api.fullname" . }}:{{ .Values.service.port }}{{ .Values.tests.basePath }}"
-          CREATE_URL="${BASE_URL}{{ .Values.tests.createTaskPath }}"
-          BODY='{{ tpl .Values.tests.createBody . | replace "\n" " " }}'
+          base = os.environ["BASE_URL"]
+          health = base + os.environ.get("HEALTH_PATH", "/health")
+          create_url = base + os.environ["CREATE_PATH"]
+          run_tpl = os.environ["RUN_PATH_TPL"]
+          body = os.environ["CREATE_BODY"].encode()
 
-          echo "==> Creating task at ${CREATE_URL}"
-          # retry a few times in case Service just came up
-          for i in $(seq 1 10); do
-            HTTP_CODE=$(curl -sS -o /tmp/create.json -w "%{http_code}" \
-              -H "Content-Type: application/json" \
-              {{ .Values.tests.extraCurlArgs }} \
-              -X POST "${CREATE_URL}" \
-              --data "${BODY}" || true)
-            if [ "${HTTP_CODE}" -ge 200 ] && [ "${HTTP_CODE}" -lt 300 ]; then
-              break
-            fi
-            echo "Create attempt $i got HTTP ${HTTP_CODE}; waiting..."
-            sleep 3
-          done
-          test -f /tmp/create.json || (echo "No create response file"; exit 1)
-          echo "--- Create response:"; cat /tmp/create.json; echo
+          def call(url, method="GET", data=None, headers=None, tries=1, sleep=0):
+              headers = headers or {}
+              for i in range(tries):
+                  try:
+                      req = urllib.request.Request(url, data=data, headers=headers, method=method)
+                      with urllib.request.urlopen(req, timeout=10) as r:
+                          return r.getcode(), r.read().decode()
+                  except Exception as e:
+                      if i == tries-1: raise
+                      time.sleep(sleep)
 
-          TASK_ID="$(jq -r '.id' /tmp/create.json)"
-          if [ -z "${TASK_ID}" ] || [ "${TASK_ID}" = "null" ]; then
-            echo "Could not parse task id from create response"
-            exit 1
-          fi
-          echo "Parsed task id: ${TASK_ID}"
+          headers = {"Content-Type":"application/json"}
 
-          RUN_URL=$(printf "{{ .Values.tests.runTaskPath }}" "${TASK_ID}")
-          RUN_URL="${BASE_URL}${RUN_URL}"
-          echo "==> Running task at ${RUN_URL}"
+          # Wait for service
+          try:
+              code, _ = call(health, tries=20, sleep=3)
+              print(f"Health check HTTP {code}")
+          except Exception as e:
+              print("Service not ready for health:", e); sys.exit(1)
 
-          HTTP_CODE=$(curl -sS -o /tmp/run.json -w "%{http_code}" \
-            -H "Content-Type: application/json" \
-            {{ .Values.tests.extraCurlArgs }} \
-            -X POST "${RUN_URL}" \
-            --data '{}' || true)
+          # Create task
+          print("==> POST", create_url)
+          try:
+              code, txt = call(create_url, "POST", data=body, headers=headers, tries=10, sleep=3)
+              print("Create HTTP", code); print(txt)
+          except Exception as e:
+              print("Create failed:", e); sys.exit(1)
+          if not (200 <= code < 300): sys.exit("Create returned non-2xx")
 
-          echo "Run HTTP code: ${HTTP_CODE}"
-          cat /tmp/run.json || true
-          echo
+          try:
+              j = json.loads(txt)
+          except Exception:
+              print("Invalid JSON on create"); sys.exit(1)
 
-          if [ "${HTTP_CODE}" -lt 200 ] || [ "${HTTP_CODE}" -ge 300 ]; then
-            echo "Run endpoint returned non-2xx"
-            exit 1
-          fi
+          task_id = j.get("id") or j.get("task_id") or (j.get("data") or {}).get("id")
+          if not task_id:
+              print("Could not parse task_id from create response"); sys.exit(1)
+          print("Parsed task_id:", task_id)
 
-          # Optional: assert a success flag in JSON (adjust keys to your API)
-          OK="$(jq -r '.ok // .success // .status // empty' /tmp/run.json)"
-          if [ -n "${OK}" ] && [ "${OK}" != "true" ] && [ "${OK}" != "ok" ] && [ "${OK}" != "success" ] && [ "${OK}" != "completed" ]; then
-            echo "Run JSON indicates non-success: ${OK}"
-            exit 1
-          fi
+          run_url = base + (run_tpl % task_id)
+          print("==> POST", run_url)
+          try:
+              code, txt = call(run_url, "POST", data=b"{}", headers=headers)
+              print("Run HTTP", code); print(txt)
+          except Exception as e:
+              print("Run failed:", e); sys.exit(1)
+          if not (200 <= code < 300): sys.exit("Run returned non-2xx")
 
-          echo "Tasks E2E test PASSED"
-  restartPolicy: Never
+          # Optional success flag
+          try:
+              r = json.loads(txt)
+              flag = r.get("ok") or r.get("success") or r.get("status")
+              if flag and str(flag).lower() not in {"true","ok","success","completed","done"}:
+                  sys.exit(f"Run indicates non-success: {flag}")
+          except Exception:
+              pass
+
+          print("Tasks E2E test PASSED")
+          PY
