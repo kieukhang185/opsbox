@@ -248,7 +248,6 @@ jobs:
                   runAsUser: 10001
                   runAsGroup: 10001
                   allowPrivilegeEscalation: false
-                  readOnlyRootFilesystem: true
           YAML
-          kubectl -n ${{ env.NAMESPACE }} wait --for=condition=complete --timeout=200s job/smoke-test-${{ github.run_id }}
-          kubectl -n ${{ env.NAMESPACE }} delete job/smoke-test-${{ github.run_id }} --ignore-not-found
+          kubectl -n ${{ env.NAMESPACE }} wait --for=condition=complete --timeout=200s job/smoke-test-${{ github.run_id }} || \
+          { kubectl -n dev logs job/smoke-test --all-containers; exit 1; }
