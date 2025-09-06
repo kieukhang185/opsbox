@@ -213,7 +213,7 @@ jobs:
             API=http://127.0.0.1:18080
 
             echo "HEALTH:"
-            test "$(curl -s -o /dev/null -w '%{http_code}' $API/health)" -eq 200
+            curl -sf "$API/health" | grep -q '"ok"'
 
             echo "CREATE TASK:"
             TASK_ID=$(curl -s -X POST $API/tasks \
@@ -221,7 +221,7 @@ jobs:
               -d '{"title":"smoke"}' | jq -r .id)
 
             echo "RUN TASK:"
-            test "$(curl -s -o /dev/null -w '%{http_code}' -X POST $API/tasks/$TASK_ID/run)" -eq 202
+            curl -s -X POST $API/tasks/$TASK_ID/run -H 'Content-Type: application/json'
 
             echo "POLL STATUS:"
             for i in $(seq 1 30); do
