@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: "{{ include "api.fullname" . }}-tasks-e2e"
+  name: "{{ include "api.fullname" . }}-smoke-test"
   labels:
     {{- include "api.labels" . | nindent 4 }}
   annotations:
