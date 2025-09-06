@@ -141,7 +141,6 @@ jobs:
       - uses: helm/kind-action@v1
         with:
           cluster_name: opsbox
-          wait: true
 
       - name: Check kind cluster
         run: kubectl cluster-info --context kind-opsbox
