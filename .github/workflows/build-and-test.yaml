@@ -1,6 +1,7 @@
 ---
 # This flow is used to build and push Docker images to GitHub Container Registry on changes to main branch.
-name: build-and-push
+# and deploy to a Kubernetes cluster and run a smoke test job.
+name: build-and-test
 
 on:
   push:
@@ -16,6 +17,7 @@ env:
   REGISTRY: ghcr.io/${{ github.repository_owner }}
   SHA_TAG: ${{ github.sha }}
   LATEST_TAG: latest
+  NAMESPACE: dev
 
 jobs:
   detect-changes:
