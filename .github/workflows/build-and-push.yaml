@@ -1,10 +1,11 @@
+---
+# This flow is used to build and push Docker images to GitHub Container Registry on changes to main branch.
 name: build-and-push
 
 on:
   push:
     branches:
       - main
-      - dev # Optional: also trigger on dev branch
   pull_request:
     branches:
       - main

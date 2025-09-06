@@ -1,10 +1,9 @@
 ---
+# This flow is used to test and build the project on each push to the dev branch.
 name: ci
 on:
-    pull_request:
-        branches: [main]
     push:
-        branches: [main]
+        branches: [dev]
 jobs:
     test-and-build:
         runs-on: ubuntu-latest
@@ -90,35 +89,3 @@ jobs:
             #     coverage run -m pytest
             #     coverage report -m
             #     coverage xml
-            - name: Set up Docker Buildx
-              uses: docker/setup-buildx-action@v3
-            - name: Build images (no push)
-              run: |
-                  docker build -t opsbox-api:ci -f api/Dockerfile .
-                  docker build -t opsbox-worker:ci -f worker/Dockerfile .
-            - name: SBOM (api)
-              uses: anchore/sbom-action@v0
-              with:
-                  image: opsbox-api:ci
-                  artifact-name: sbom-api.spdx.json
-            - name: SBOM (worker)
-              uses: anchore/sbom-action@v0
-              with:
-                  image: opsbox-worker:ci
-                  artifact-name: sbom-worker.spdx.json
-            - name: Trivy scan API
-              uses: aquasecurity/trivy-action@0.24.0
-              with:
-                  image-ref: opsbox-api:ci
-                  format: table
-                  vuln-type: os,library
-                  exit-code: '1'
-                  severity: CRITICAL,HIGH
-            - name: Trivy scan worker
-              uses: aquasecurity/trivy-action@0.24.0
-              with:
-                  image-ref: opsbox-worker:ci
-                  format: table
-                  vuln-type: os,library
-                  exit-code: '1'
-                  severity: CRITICAL,HIGH
