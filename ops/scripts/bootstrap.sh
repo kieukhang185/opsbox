@@ -6,6 +6,7 @@ export WORKSPACE="$(find "${HOME}" -type d -name opsbox)"
 pushd "$WORKSPACE" || exit 1
 
 setup_tool(){
+  # shellcheck disable=SC1091
   source "${WORKSPACE}/ops/scripts/setup.sh"
   install_"$1"
 }
@@ -51,11 +52,7 @@ helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
 # Postgres (bitnami)
 kubectl create namespace dev --dry-run=client -o yaml | kubectl apply -f -
 helm repo add bitnami https://charts.bitnami.com/bitnami
-helm upgrade --install pg bitnami/postgresql \
-  --set auth.postgresPassword=postgres \
-  --set primary.resources.requests.cpu=50m \
-  --set primary.resources.requests.memory=128Mi \
-  --namespace dev
+helm upgrade --install pg bitnami/postgresql -n dev -f ops/helm/postgres/values.dev.yaml
 helm upgrade --install rabbitmq bitnami/rabbitmq -n dev -f ops/helm/rabbitmq/values.dev.yaml
 
 # Build images and load into kind

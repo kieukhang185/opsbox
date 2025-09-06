@@ -1,0 +1,13 @@
+global:
+  postgresql:
+    auth:
+      username: postgres
+      password: postgres
+      database: postgres
+primary:
+  persistence:
+    enabled: false
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi

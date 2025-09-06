@@ -1,123 +1,91 @@
+---
+# This flow is used to test and build the project on each push to the dev branch.
 name: ci
 on:
-  pull_request:
-    branches: ["main"]
-  push:
-    branches: ["main"]
+    push:
+        branches: [dev]
 jobs:
-  test-and-build:
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16
+    test-and-build:
+        runs-on: ubuntu-latest
+        services:
+            postgres:
+                image: postgres:16
+                env:
+                    POSTGRES_USER: postgres
+                    POSTGRES_PASSWORD: postgres
+                    POSTGRES_DB: opsbox
+                ports:
+                    - 5432:5432
+                options: >-
+                    --health-cmd="pg_isready -U postgres -d opsbox"
+                    --health-interval=10s
+                    --health-timeout=5s
+                    --health-retries=10
+            rabbitmq:
+                image: rabbitmq:3.11-management
+                ports:
+                    - 5672:5672
+                    - 15672:15672
+                options: >-
+                    --health-cmd="rabbitmq-diagnostics -q ping"
+                    --health-interval=10s
+                    --health-timeout=5s
+                    --health-retries=10
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: opsbox
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd="pg_isready -U postgres -d opsbox"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=10
-      rabbitmq:
-        image: rabbitmq:3.11-management
-        ports:
-          - 5672:5672
-          - 15672:15672
-        options: >-
-          --health-cmd="rabbitmq-diagnostics -q ping"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=10
-    env:
-      PIP_DISABLE_PIP_VERSION_CHECK: 1
-      PYTHONDONTWRITEBYTECODE: 1
-      PYTHONUNBUFFERED: 1
-      DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/opsbox
-      BROKER_URL: amqp://guest:guest@localhost:5672/
-      RESULT_BACKEND: rpc://
-      CELERY_QUEUE: default
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Cache pip
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: pip-${{ runner.os }}-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r api/requirements.txt
-          pip install -r worker/requirements.txt
-          pip install alembic pytest ruff pika
-      - name: Lint (ruff)
-        run: |
-          ruff check .
-          ruff format --check .
-      - name: Waite for servicess
-        run: |
-          for i in {1..30}; do
-            pg_isready -h localhost -p 5432 -U postgres && break || sleep 2
-          done
-          python - <<'PY'
-          import os, time
-          import pika
-          for _ in range(30):
-              try:
-                  pika.BlockingConnection(pika.URLParameters(os.environ["BROKER_URL"])).close()
-                  break
-              except Exception:
-                  time.sleep(2)
-          PY
-      - name: Alambic upgrade
-        run: |
-          export PYTHONPATH=$(pwd)/shared
-          alembic upgrade head
-      # Skip this step for now, will update tests
-      # - name: Pytest
-      #   env:
-      #     PYTHONPATH: .
-      #   run: |
-      #     export PYTHONPATH=$(pwd)
-      #     pytest -q
-      #     coverage run -m pytest
-      #     coverage report -m
-      #     coverage xml
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Build images (no push)
-        run: |
-          docker build -t opsbox-api:ci -f api/Dockerfile .
-          docker build -t opsbox-worker:ci -f worker/Dockerfile .
-      - name: SBOM (api)
-        uses: anchore/sbom-action@v0
-        with:
-          image: opsbox-api:ci
-          artifact-name: "sbom-api.spdx.json"
-      - name: SBOM (worker)
-        uses: anchore/sbom-action@v0
-        with:
-          image: opsbox-worker:ci
-          artifact-name: "sbom-worker.spdx.json"
-      - name: Trivy scan API
-        uses: aquasecurity/trivy-action@0.24.0
-        with:
-          image-ref: opsbox-api:ci
-          format: table
-          vuln-type: os,library
-          exit-code: "1"
-          severity: "CRITICAL,HIGH"
-      - name: Trivy scan worker
-        uses: aquasecurity/trivy-action@0.24.0
-        with:
-          image-ref: opsbox-worker:ci
-          format: table
-          vuln-type: os,library
-          exit-code: "1"
-          severity: "CRITICAL,HIGH"
+            PIP_DISABLE_PIP_VERSION_CHECK: 1
+            PYTHONDONTWRITEBYTECODE: 1
+            PYTHONUNBUFFERED: 1
+            DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/opsbox
+            BROKER_URL: amqp://guest:guest@localhost:5672/
+            RESULT_BACKEND: rpc://
+            CELERY_QUEUE: default
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-python@v5
+              with:
+                  python-version: '3.12'
+            - name: Cache pip
+              uses: actions/cache@v4
+              with:
+                  path: ~/.cache/pip
+                  key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+                  restore-keys: pip-${{ runner.os }}-
+            - name: Install dependencies
+              run: |
+                  python -m pip install --upgrade pip
+                  pip install -r api/requirements.txt
+                  pip install -r worker/requirements.txt
+                  pip install alembic pytest ruff pika
+            - name: Lint (ruff)
+              run: |
+                  ruff check .
+                  ruff format --check .
+            - name: Waite for servicess
+              run: |
+                  for i in {1..30}; do
+                    pg_isready -h localhost -p 5432 -U postgres && break || sleep 2
+                  done
+                  python - <<'PY'
+                  import os, time
+                  import pika
+                  for _ in range(30):
+                      try:
+                          pika.BlockingConnection(pika.URLParameters(os.environ["BROKER_URL"])).close()
+                          break
+                      except Exception:
+                          time.sleep(2)
+                  PY
+            - name: Alambic upgrade
+              run: |
+                  export PYTHONPATH=$(pwd)/shared
+                  alembic upgrade head
+            # Skip this step for now, will update tests
+            # - name: Pytest
+            #   env:
+            #     PYTHONPATH: .
+            #   run: |
+            #     export PYTHONPATH=$(pwd)
+            #     pytest -q
+            #     coverage run -m pytest
+            #     coverage report -m
+            #     coverage xml

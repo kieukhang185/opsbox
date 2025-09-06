@@ -19,3 +19,4 @@ USER app
 ENV PYTHONPATH=/app
 
 CMD ["celery", "-A", "app.celery_app.celery_app", "worker", "--loglevel=info", "-Q", "tasks", "-n", "worker@%h"]
+

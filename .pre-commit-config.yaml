@@ -1,49 +1,61 @@
+---
 repos:
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.6.9
-    hooks:
-      - id: ruff
-        args: [--fix]
-      - id: ruff-format
+    - repo: https://github.com/astral-sh/ruff-pre-commit
+      rev: v0.6.9
+      hooks:
+          - id: ruff
+            args: [--fix]
+          - id: ruff-format
 
-  - repo: https://github.com/pycqa/flake8
-    rev: 6.0.0
-    hooks:
-      - id: flake8
-        additional_dependencies: [flake8==6.0.0]
-        language_version: python3.12.3
-        exclude: ^src/app/alembic
-        files: ^src/
+    - repo: https://github.com/pycqa/flake8
+      rev: 6.0.0
+      hooks:
+          - id: flake8
+            additional_dependencies: [flake8==6.0.0]
+            language_version: python3.12.3
+            exclude: ^src/app/alembic
+            files: ^src/
 
-  - repo: https://github.com/psf/black
-    rev: 24.8.0
-    hooks:
-      - id: black
+    - repo: https://github.com/psf/black
+      rev: 24.8.0
+      hooks:
+          - id: black
 
-  - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.10.0.1
-    hooks:
-      - id: shellcheck
-        name: shellcheck (ops/scripts)
-        args: [--ignore, SC2015]
-        files: ^ops/scripts/.*\.sh$
-        args: [-x]
+    - repo: https://github.com/shellcheck-py/shellcheck-py
+      rev: v0.10.0.1
+      hooks:
+          - id: shellcheck
+            name: shellcheck (ops/scripts)
+            args: [--exclude, SC2015]
+            files: ^ops/scripts/.*\.sh$
 
-  - repo: https://github.com/AleksaC/hadolint-py
-    rev: v2.12.1b3
-    hooks:
-      - id: hadolint
-        args: [--ignore, DL3008, --ignore , DL3007, --ignore, DL4006]
-        exclude: ^src/app/alembic
+    - repo: https://github.com/AleksaC/hadolint-py
+      rev: v2.12.1b3
+      hooks:
+          - id: hadolint
+            args: [--ignore, DL3008, --ignore, DL3007, --ignore, DL4006]
+            exclude: ^src/app/alembic
+
+    - repo: https://github.com/pre-commit/pre-commit-hooks
+      rev: v4.6.0 # Use the latest stable version
+      hooks:
+          - id: check-yaml
+            args: [--allow-multiple-documents]
+
+    - repo: https://github.com/adrienverge/yamllint
+      rev: v1.35.1 # Use the latest stable version
+      hooks:
+          - id: yamllint
+            args: [-c, .config.yaml]
 
 # Exclude non-code and generated paths globally
 exclude: |
-  (?x)^(
-    ops/helm/|
-    .*migrations/|
-    .venv/|
-    venv/|
-    node_modules/|
-    dist/|
-    build/
-  )
+    (?x)^(
+      ops/helm/|
+      .*migrations/|
+      .venv/|
+      venv/|
+      node_modules/|
+      dist/|
+      build/
+    )
