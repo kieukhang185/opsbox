@@ -6,7 +6,6 @@ metadata:
     {{- include "api.labels" . | nindent 4 }}
   annotations:
     "helm.sh/hook": test
-    "helm.sh/hook-delete-policy": hook-succeeded
 spec:
   containers:
   containers:
@@ -17,9 +16,9 @@ spec:
         - -c
         - >
           set -e;
-          echo "Probing http://{{ include "api.fullname" . }}:{{ .Values.service.port }}/health";
+          echo "Probing http://{{ include "api.fullname" . }}:{{ .Values.service.port }}{{ .Values.health.path | default "/health" }}";
           for i in $(seq 1 30); do
-            if curl -fsS "http://{{ include "api.fullname" . }}:{{ .Values.service.port }}/health"; then
+            if curl -fsS "http://{{ include "api.fullname" . }}:{{ .Values.service.port }}{{ .Values.health.path | default "/health" }}"; then
               echo "Smoke OK";
               exit 0;
             fi;
