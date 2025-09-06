@@ -141,6 +141,8 @@ jobs:
       - uses: helm/kind-action@v1
         with:
           cluster_name: opsbox
+          wait: true
+        run: kubectl cluster-info --context kind-opsbox
 
       - name: Resolve image tags
         id: vars
@@ -157,13 +159,13 @@ jobs:
           kubectl get ns ${{ env.NAMESPACE }} || kubectl create ns ${{ env.NAMESPACE }}
           helm upgrade --install pg bitnami/postgresql -n ${{ env.NAMESPACE }} -f ops/helm/postgres/values.dev.yaml
           # wait for PG ready
-          kubectl -n ${{ env.NAMESPACE }} rollout status statefulset/pg-postgresql --timeout=240
+          kubectl -n ${{ env.NAMESPACE }} rollout status statefulset/pg-postgresql --timeout=240s
 
       - name: Install/upgrade RabbitMQ
         run: |
           helm upgrade --install rabbitmq bitnami/rabbitmq -n ${{ env.NAMESPACE }} -f ops/helm/rabbitmq/values.dev.yaml
           # wait for RabbitMQ ready
-          kubectl -n ${{ env.NAMESPACE }} rollout status statefulset/rabbitmq --timeout=240
+          kubectl -n ${{ env.NAMESPACE }} rollout status statefulset/rabbitmq --timeout=240s
 
       - name: Apply secrets
         run: |
@@ -188,8 +190,8 @@ jobs:
 
       - name: Wait for deployments
         run: |
-          kubectl -n ${{ env.NAMESPACE }} rollout status deployment/api --timeout=240
-          kubectl -n ${{ env.NAMESPACE }} rollout status deployment/worker --timeout=240
+          kubectl -n ${{ env.NAMESPACE }} rollout status deployment/api --timeout=240s
+          kubectl -n ${{ env.NAMESPACE }} rollout status deployment/worker --timeout=240s
 
       - name: SMOKE test
         run: |
