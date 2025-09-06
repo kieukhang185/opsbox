@@ -6,10 +6,25 @@ metadata:
     {{- include "api.labels" . | nindent 4 }}
   annotations:
     "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": hook-succeeded
 spec:
   containers:
-    - name: wget
-      image: busybox
-      command: ['wget']
-      args: ['{{ include "api.fullname" . }}:{{ .Values.service.port }}']
+  containers:
+    - name: curl
+      image: curlimages/curl:8.8.0
+      args:
+        - sh
+        - -c
+        - >
+          set -e;
+          echo "Probing http://{{ include "api.fullname" . }}:{{ .Values.service.port }}{{ .Values.health.path | default "/health" }}";
+          for i in $(seq 1 30); do
+            if curl -fsS "http://{{ include "api.fullname" . }}:{{ .Values.service.port }}{{ .Values.health.path | default "/health" }}"; then
+              echo "Smoke OK";
+              exit 0;
+            fi;
+            echo "Waiting for service...";
+            sleep 3;
+          done;
+          echo "Smoke FAILED";
   restartPolicy: Never
