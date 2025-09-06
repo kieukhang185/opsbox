@@ -158,7 +158,7 @@ jobs:
       - name: Install/upgrade Prometheus
         run: |
           kubectl get ns monitoring || kubectl create ns monitoring --dry-run=client -o yaml | kubectl apply -f -
-          helm upgrade --install monitoring prometheus-community/prometheus \
+          helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
             --namespace monitoring \
             --set grafana.enabled=true \
             --set grafana.service.type=ClusterIP \
