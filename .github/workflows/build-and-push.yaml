@@ -57,7 +57,7 @@ jobs:
 
       - name: Build API
         run: |
-          docker build --tag ${{ env.REGISTRY }}/opsbox-api:${{ env.SHA_TAG }} --tag ${{ env.REGISTRY }}/opsbox-api:${{ env.LATEST_TAG }} --file api/Dockerfile api
+          docker build --tag ${{ env.REGISTRY }}/opsbox-api:${{ env.SHA_TAG }} --tag ${{ env.REGISTRY }}/opsbox-api:${{ env.LATEST_TAG }} --file api/Dockerfile .
 
       - name: Push API
         run: |
@@ -102,7 +102,7 @@ jobs:
 
       - name: Build Worker
         run: |
-          docker build --tag ${{ env.REGISTRY }}/opsbox-worker:${{ env.SHA_TAG }} --tag ${{ env.REGISTRY }}/opsbox-worker:${{ env.LATEST_TAG }} --file worker/Dockerfile worker
+          docker build --tag ${{ env.REGISTRY }}/opsbox-worker:${{ env.SHA_TAG }} --tag ${{ env.REGISTRY }}/opsbox-worker:${{ env.LATEST_TAG }} --file worker/Dockerfile .
 
       - name: Push Worker
         run: |
