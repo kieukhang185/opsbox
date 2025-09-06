@@ -217,11 +217,12 @@ jobs:
         run: |
           kubectl -n ${{ env.NAMESPACE }} rollout status deploy/api --timeout=240s
           kubectl -n ${{ env.NAMESPACE }} rollout status deploy/worker --timeout=240s
+          kubectl -n ${{ env.NAMESPACE }} port-forward svc/api 8080:80 >/tmp/pf.log 2>&1
 
       - name: Run Helm smoke tests
         run: |
-          helm test api -n $NAMESPACE --logs
-          helm test worker -n $NAMESPACE --logs
+          helm test api -n ${{ env.NAMESPACE }} --logs
+          helm test worker -n ${{ env.NAMESPACE }} --logs
 
       - name: SMOKE test
         run: |
@@ -229,7 +230,6 @@ jobs:
 
             # Port-forward API to localhost
             curl -sf http://127.0.0.1:8000/health
-            kubectl -n ${{ env.NAMESPACE }} port-forward deploy/api 8080:8000
             API=http://127.0.0.1:8080
 
             echo "POLL STATUS:"
