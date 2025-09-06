@@ -1,7 +1,6 @@
 # opsbox
 [![CI](https://github.com/kieukhang185/opsbox/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/kieukhang185/opsbox/actions/workflows/ci.yaml)
-[![Build-and-push](https://github.com/kieukhang185/opsbox/actions/workflows/build-and-push.yaml/badge.svg?branch=main)](https://github.com/kieukhang185/opsbox/actions/workflows/build-and-push.yaml)
-[![Deploy-and-test](https://github.com/kieukhang185/opsbox/actions/workflows/deploy-and-test.yaml/badge.svg?branch=main)](https://github.com/kieukhang185/opsbox/actions/workflows/deploy-and-test.yaml)
+[![Build-and-test](https://github.com/kieukhang185/opsbox/actions/workflows/build-and-push.yaml/badge.svg?branch=main)](https://github.com/kieukhang185/opsbox/actions/workflows/build-and-push.yaml)
 [![Pre-commit](https://github.com/kieukhang185/opsbox/actions/workflows/pre-commit.yaml/badge.svg?branch=main)](https://github.com/kieukhang185/opsbox/actions/workflows/pre-commit.yaml)
 
 A small, real service (API + worker) and all the DevOps around it—containers, Kubernetes, CI/CD, observability, security—so you become production-fluent in Python and Bash.
@@ -35,11 +34,16 @@ opsbox --tag dev # Build API & Worker docker images
 ```
 
 ### CI/CD Flow
-```bash
-build-and-push: Build and Push API & Worker images to github registry (on push & pull-request main branch)
-ci: Basic ci flow to check API & Worker (on push dev branch)
-pre-commit: Synctax flow to check for Python, Bash, Yaml and so on (on push & pull-request main branch)
-```
+
+#### build-and-test
+Build and Push API & Worker images to github registry (on push & pull-request main branch)
+
+#### ci
+Basic ci flow to check API & Worker (on push dev branch)
+
+#### pre-commit
+Synctax flow to check for Python, Bash, Yaml and so on (on push & pull-request main branch)
+
 
 ### Developer workflow
 ```bash
