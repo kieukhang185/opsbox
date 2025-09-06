@@ -7,7 +7,6 @@ on:
   push:
     branches:
       - main
-      - dev # For testing deploy and test flow
   pull_request:
     branches:
       - main
