@@ -205,19 +205,6 @@ jobs:
             --set image.repository=${{ env.REGISTRY }}/opsbox-worker \
             --set image.tag=${{ steps.vars.outputs.worker-tag }}
 
-      - name: Load images into kind
-        run: |
-          if [ "${{ needs.detect-changes.outputs.api-build }}" = "true" ]; then
-            kind load docker-image ${{ env.REGISTRY }}/opsbox-api:${{ steps.vars.outputs.api-tag }} --name opsbox
-          else
-            kind load docker-image ${{ env.REGISTRY }}/opsbox-api:latest --name opsbox
-          fi
-          if [ "${{ needs.detect-changes.outputs.worker-build }}" = "true" ]; then
-            kind load docker-image ${{ env.REGISTRY }}/opsbox-worker:${{ steps.vars.outputs.worker-tag }} --name opsbox
-          else
-            kind load docker-image ${{ env.REGISTRY }}/opsbox-worker:latest --name opsbox
-          fi
-
       - name: Helm upgrade API
         run: |
           helm upgrade --install api ops/helm/api -n ${{ env.NAMESPACE }} \
@@ -231,14 +218,19 @@ jobs:
           kubectl -n ${{ env.NAMESPACE }} rollout status deploy/api --timeout=240s
           kubectl -n ${{ env.NAMESPACE }} rollout status deploy/worker --timeout=240s
 
+      - name: Run Helm smoke tests
+        run: |
+          helm test api -n $NAMESPACE --logs
+          helm test worker -n $NAMESPACE --logs
+
       - name: SMOKE test
         run: |
             set -ex
 
             # Port-forward API to localhost
-            kubectl -n ${{ env.NAMESPACE }} port-forward deploy/api 8080:8000 >/tmp/pf.log 2>&1 &
-            API=http://127.0.0.1:8080
             curl -sf http://127.0.0.1:8000/health
+            kubectl -n ${{ env.NAMESPACE }} port-forward deploy/api 8080:8000
+            API=http://127.0.0.1:8080
 
             echo "POLL STATUS:"
             time_sleep=30
