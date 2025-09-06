@@ -129,10 +129,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
   deploy-and-test:
-    needs:
-      - build-push-api
-      - build-push-worker
-    if: ${{ needs.build-push-api.result == 'success' }} && ${{ needs.build-push-worker.result == 'success' }}
+    needs: [build-push-api, build-push-worker, detect-changes]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -147,7 +144,20 @@ jobs:
 
       - name: Resolve image tags
         id: vars
-        run: echo "tag=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+        run: |
+          # if not change image use latest tag
+          if [ "${{ needs.detect-changes.outputs.api-build }}" = "false" ]; then
+            echo "API not changed, using latest tag"
+            echo "api-tag=latest" >> "$GITHUB_OUTPUT"
+          else
+            echo "api-tag=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          fi
+          if [ "${{ needs.detect-changes.outputs.worker-build }}" = "false" ]; then
+            echo "Worker not changed, using latest tag"
+            echo "worker-tag=latest" >> "$GITHUB_OUTPUT"
+          else
+            echo "worker-tag=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Helm repository
         run: |
@@ -192,7 +202,7 @@ jobs:
         run: |
           helm upgrade --install api ops/helm/api -n ${{ env.NAMESPACE }} \
             --set image.repository=${{ env.REGISTRY }}/opsbox-api \
-            --set image.tag=${{ steps.vars.outputs.tag }} \
+            --set image.tag=${{ steps.vars.outputs.api-tag }} \
             --set service.port=80 \
             --set containerPort=8000
 
@@ -200,7 +210,7 @@ jobs:
         run: |
           helm upgrade --install worker ops/helm/worker -n ${{ env.NAMESPACE }} \
             --set image.repository=${{ env.REGISTRY }}/opsbox-worker \
-            --set image.tag=${{ steps.vars.outputs.tag }}
+            --set image.tag=${{ steps.vars.outputs.worker-tag }}
 
       - name: Wait for deployments
         run: |
@@ -210,7 +220,10 @@ jobs:
       - name: SMOKE test
         run: |
             set -euo pipefail
-            API=http://127.0.0.1:18080
+
+            # Port-forward API to localhost
+            kubectl -n dev port-forward svc/api 8080:80 >/tmp/pf.log 2>&1 &
+            API=http://127.0.0.1:8080
 
             echo "HEALTH:"
             curl -sf "$API/health" | grep -q '"ok"'
