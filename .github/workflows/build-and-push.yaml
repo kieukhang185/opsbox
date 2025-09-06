@@ -56,8 +56,6 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build API
-        with:
-          path: api/Dockerfile
         run: |
           docker build --tag ${{ env.REGISTRY }}/opsbox-api:${{ env.SHA_TAG }} --tag ${{ env.REGISTRY }}/opsbox-api:${{ env.LATEST_TAG }} --file api/Dockerfile api
 
@@ -81,49 +79,47 @@ jobs:
           exit-code: '1'
           severity: 'CRITICAL,HIGH'
 
-    build-push-worker:
-      needs: detect-changes
-      if: needs.detect-changes.outputs.worker-build == 'true'
-      runs-on: ubuntu-latest
-      permissions:
-        contents: read
-        packages: write
-      steps:
-        - name: Checkout repository
-          uses: actions/checkout@v4
+  build-push-worker:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.worker-build == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-        - name: Set up Docker Buildx
-          uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-        - name: Log in to GitHub Container Registry
-          uses: docker/login-action@v3
-          with:
-            registry: ${{ env.REGISTRY }}
-            username: ${{ github.actor }}
-            token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-        - name: Build Worker
-          with:
-            path: worker/Dockerfile
-          run: |
-            docker build --tag ${{ env.REGISTRY }}/opsbox-worker:${{ env.SHA_TAG }} --tag ${{ env.REGISTRY }}/opsbox-worker:${{ env.LATEST_TAG }} --file worker/Dockerfile worker
+      - name: Build Worker
+        run: |
+          docker build --tag ${{ env.REGISTRY }}/opsbox-worker:${{ env.SHA_TAG }} --tag ${{ env.REGISTRY }}/opsbox-worker:${{ env.LATEST_TAG }} --file worker/Dockerfile worker
 
-        - name: Push Worker
-          run: |
-            docker push ${{ env.REGISTRY }}/opsbox-worker:${{ env.SHA_TAG }}
-            docker push ${{ env.REGISTRY }}/opsbox-worker:${{ env.LATEST_TAG }}
+      - name: Push Worker
+        run: |
+          docker push ${{ env.REGISTRY }}/opsbox-worker:${{ env.SHA_TAG }}
+          docker push ${{ env.REGISTRY }}/opsbox-worker:${{ env.LATEST_TAG }}
 
-        - name: SBOM Worker
-          uses: anchore/sbom-action@v0
-          with:
-            image: ${{ env.REGISTRY }}/opsbox-worker:${{ env.SHA_TAG }}
-            artifact-name: sbom-worker.spdx.json
+      - name: SBOM Worker
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.REGISTRY }}/opsbox-worker:${{ env.SHA_TAG }}
+          artifact-name: sbom-worker.spdx.json
 
-        - name: Trivy scan Worker
-          uses: aquasecurity/trivy-action@0.24.0
-          with:
-            image-ref: ${{ env.REGISTRY }}/opsbox-worker:${{ env.SHA_TAG }}
-            format: 'json'
-            output: 'trivy-worker-report.json'
-            exit-code: '1'
-            severity: 'CRITICAL,HIGH'
+      - name: Trivy scan Worker
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: ${{ env.REGISTRY }}/opsbox-worker:${{ env.SHA_TAG }}
+          format: 'json'
+          output: 'trivy-worker-report.json'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
