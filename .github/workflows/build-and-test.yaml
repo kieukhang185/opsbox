@@ -209,45 +209,28 @@ jobs:
 
       - name: SMOKE test
         run: |
-          cat <<'YAML' | kubectl -n ${{ env.NAMESPACE }} apply -f -
-          apiVersion: batch/v1
-          kind: Job
-          metadata: { name: smoke-test-${{ github.run_id }} }
-          spec:
-            backoffLimit: 0
-            template:
-              spec:
-                restartPolicy: Never
-                containers:
-                - name: curl
-                  image: curlimages/curl:8.2.1
-                  args:
-                  - sh
-                  - -c
-                  - |
-                    set -e
-                    API=http://api.${{ env.NAMESPACE }}.svc.cluster.local:80
-                    # health
-                    test "(curl -s -o /dev/null -w '%{http_code}' $API/health) -eq 200"
-                    # create task
-                    TASK_ID=$(curl -s -X POST $API/tasks -H 'Content-Type: application/json' -d '{"title":"smoke"}' | jq -r .id)
-                    # enqueue task
-                    test "(curl -s -o /dev/null -w '%{http_code}' -X POST $API/tasks/$TASK_ID/run) -eq 202"
-                    # pull status up to 30s
-                    for i in $(seq 1 30); do
-                      STATUS=$(curl -s $API/tasks/$TASK_ID | jq -r .status)
-                      echo "$i: $STATUS"
-                      case "$STATUS" in
-                        SUCCEEDED) exit 0 ;;
-                        FAILED)    exit 1 ;;
-                      esac
-                      sleep 2
-                    done
-                    echo "TIMEOUT"; exit 1
-                securityContext:
-                  runAsUser: 10001
-                  runAsGroup: 10001
-                  allowPrivilegeEscalation: false
-          YAML
-          kubectl -n ${{ env.NAMESPACE }} wait --for=condition=complete --timeout=200s job/smoke-test-${{ github.run_id }} || \
-          { kubectl -n dev logs job/smoke-test --all-containers; exit 1; }
+            set -euo pipefail
+            API=http://127.0.0.1:18080
+
+            echo "HEALTH:"
+            test "$(curl -s -o /dev/null -w '%{http_code}' $API/health)" -eq 200
+
+            echo "CREATE TASK:"
+            TASK_ID=$(curl -s -X POST $API/tasks \
+              -H 'Content-Type: application/json' \
+              -d '{"title":"smoke"}' | jq -r .id)
+
+            echo "RUN TASK:"
+            test "$(curl -s -o /dev/null -w '%{http_code}' -X POST $API/tasks/$TASK_ID/run)" -eq 202
+
+            echo "POLL STATUS:"
+            for i in $(seq 1 30); do
+              STATUS=$(curl -s $API/tasks/$TASK_ID | jq -r .status)
+              echo "$i: $STATUS"
+              case "$STATUS" in
+                SUCCEEDED) exit 0 ;;
+                FAILED)    exit 1 ;;
+              esac
+              sleep 2
+            done
+            echo "TIMEOUT"; exit 1
