@@ -17,9 +17,9 @@ spec:
         - -c
         - >
           set -e;
-          echo "Probing http://{{ include "api.fullname" . }}:{{ .Values.service.port }}{{ .Values.health.path | default "/health" }}";
+          echo "Probing http://{{ include "api.fullname" . }}:{{ .Values.service.port }}/health";
           for i in $(seq 1 30); do
-            if curl -fsS "http://{{ include "api.fullname" . }}:{{ .Values.service.port }}{{ .Values.health.path | default "/health" }}"; then
+            if curl -fsS "http://{{ include "api.fullname" . }}:{{ .Values.service.port }}/health"; then
               echo "Smoke OK";
               exit 0;
             fi;

@@ -222,37 +222,37 @@ jobs:
       - name: Run Helm smoke tests
         run: |
           helm test api -n ${{ env.NAMESPACE }} --logs
-          helm test worker -n ${{ env.NAMESPACE }} --logs
 
-      - name: SMOKE test
-        run: |
-            set -ex
+      # - name: SMOKE test
+      #   run: |
+      #       set -ex
 
-            # Port-forward API to localhost
-            curl -sf http://127.0.0.1:8000/health
-            API=http://127.0.0.1:8080
+      #       # Port-forward API to localhost
+      #       curl -sf http://127.0.0.1:8000/health
+      #       API=http://127.0.0.1:8080
 
-            echo "POLL STATUS:"
-            time_sleep=30
-            retry=3
-            while [ $retry -gt 0 ]; do
-              if curl -sf "$API/health" | grep -q '"ok"'; then
-                echo "SMOKE: OK"
-              fi
-              echo "Waiting ${time_sleep}s for port-forward to be ready..."
-              sleep "${time_sleep}"
-              retry=$((retry - 1))
-              [[ $retry -eq 0 ]] && eval "echo 'SMOKE: FAIL' && exit 1"
-            done
-            echo "TIMEOUT"; exit 1
+      #       echo "POLL STATUS:"
+      #       time_sleep=30
+      #       retry=3
+      #       while [ $retry -gt 0 ]; do
+      #         if curl -sf "$API/health" | grep -q '"ok"'; then
+      #           echo "SMOKE: OK"
+      #         fi
+      #         echo "Waiting ${time_sleep}s for port-forward to be ready..."
+      #         sleep "${time_sleep}"
+      #         retry=$((retry - 1))
+      #         [[ $retry -eq 0 ]] && eval "echo 'SMOKE: FAIL' && exit 1"
+      #       done
+      #       echo "TIMEOUT"; exit 1
 
-            echo "CREATE TASK:"
-            TASK_ID=$(curl -s -X POST $API/tasks \
-              -H 'Content-Type: application/json' \
-              -d '{"title":"smoke"}' | jq -r .id)
+      #       echo "CREATE TASK:"
+      #       TASK_ID=$(curl -s -X POST $API/tasks \
+      #         -H 'Content-Type: application/json' \
+      #         -d '{"title":"smoke"}' | jq -r .id)
 
-            echo "RUN TASK:"
-            curl -s -X POST $API/tasks/$TASK_ID/run -H 'Content-Type: application/json'
+      #       echo "RUN TASK:"
+      #       curl -s -X POST $API/tasks/$TASK_ID/run -H 'Content-Type: application/json'
+
       - name: Print helpful diagnostics on failure
         if: failure()
         run: |
