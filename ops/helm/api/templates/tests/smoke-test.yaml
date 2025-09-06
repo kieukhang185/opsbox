@@ -1,0 +1,75 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "api.fullname" . }}-tasks-e2e"
+  labels:
+    {{- include "api.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+  containers:
+    - name: curl
+      image: curlimages/curl:8.8.0
+      command: ["/bin/sh","-c"]
+      args:
+        - |
+          set -euo pipefail
+          apk add --no-cache curl jq
+
+          BASE_URL="http://{{ include "api.fullname" . }}:{{ .Values.service.port }}{{ .Values.tests.basePath }}"
+          CREATE_URL="${BASE_URL}{{ .Values.tests.createTaskPath }}"
+          BODY='{{ tpl .Values.tests.createBody . | replace "\n" " " }}'
+
+          echo "==> Creating task at ${CREATE_URL}"
+          # retry a few times in case Service just came up
+          for i in $(seq 1 10); do
+            HTTP_CODE=$(curl -sS -o /tmp/create.json -w "%{http_code}" \
+              -H "Content-Type: application/json" \
+              {{ .Values.tests.extraCurlArgs }} \
+              -X POST "${CREATE_URL}" \
+              --data "${BODY}" || true)
+            if [ "${HTTP_CODE}" -ge 200 ] && [ "${HTTP_CODE}" -lt 300 ]; then
+              break
+            fi
+            echo "Create attempt $i got HTTP ${HTTP_CODE}; waiting..."
+            sleep 3
+          done
+          test -f /tmp/create.json || (echo "No create response file"; exit 1)
+          echo "--- Create response:"; cat /tmp/create.json; echo
+
+          TASK_ID="$(jq -r '.id' /tmp/create.json)"
+          if [ -z "${TASK_ID}" ] || [ "${TASK_ID}" = "null" ]; then
+            echo "Could not parse task id from create response"
+            exit 1
+          fi
+          echo "Parsed task id: ${TASK_ID}"
+
+          RUN_URL=$(printf "{{ .Values.tests.runTaskPath }}" "${TASK_ID}")
+          RUN_URL="${BASE_URL}${RUN_URL}"
+          echo "==> Running task at ${RUN_URL}"
+
+          HTTP_CODE=$(curl -sS -o /tmp/run.json -w "%{http_code}" \
+            -H "Content-Type: application/json" \
+            {{ .Values.tests.extraCurlArgs }} \
+            -X POST "${RUN_URL}" \
+            --data '{}' || true)
+
+          echo "Run HTTP code: ${HTTP_CODE}"
+          cat /tmp/run.json || true
+          echo
+
+          if [ "${HTTP_CODE}" -lt 200 ] || [ "${HTTP_CODE}" -ge 300 ]; then
+            echo "Run endpoint returned non-2xx"
+            exit 1
+          fi
+
+          # Optional: assert a success flag in JSON (adjust keys to your API)
+          OK="$(jq -r '.ok // .success // .status // empty' /tmp/run.json)"
+          if [ -n "${OK}" ] && [ "${OK}" != "true" ] && [ "${OK}" != "ok" ] && [ "${OK}" != "success" ] && [ "${OK}" != "completed" ]; then
+            echo "Run JSON indicates non-success: ${OK}"
+            exit 1
+          fi
+
+          echo "Tasks E2E test PASSED"
+  restartPolicy: Never
