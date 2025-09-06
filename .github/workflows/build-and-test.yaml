@@ -147,8 +147,6 @@ jobs:
 
       - name: Resolve image tags
         id: vars
-        outputs:
-          tag: ${{ steps.set-tag.outputs.tag }}
         run: echo "tag=${{ github.sha }}" >> "$GITHUB_OUTPUT"
 
       - name: Helm repository
