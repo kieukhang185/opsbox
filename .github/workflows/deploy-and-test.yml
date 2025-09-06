@@ -1,0 +1,115 @@
+---
+# This flow is used to deploty and test the project after build-and-push flow is completed.
+name: deploy-and-test
+on:
+    workflow_run:
+        workflows: ["build-and-push"]
+        types: ["completed"]
+env:
+    REGISTRY: ghcr.io/${{ github.repository_owner }}
+    KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
+    NAMESPACE: dev
+jobs:
+    deploy-and-test:
+        if: ${{ github.event.workflow_run.conclusion == 'success' }}
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Set up Kubectl/Helm
+              run: |
+                mkdir -p $HOME/.kube
+                echo "${KUBE_CONFIG}" > $HOME/.kube/config
+                chmod 600 $HOME/.kube/config
+                kubectl get ns ${{ env.NAMESPACE }} || kubectl create ns ${{ env.NAMESPACE }}
+                curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+              env:
+                  KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+
+            - name: Resolve image tags
+              id: vars
+              run: |
+                echo "tag=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
+
+            - name: Helm repository
+              run: |
+                helm repo add bitnami https://charts.bitnami.com/bitnami
+                helm repo update
+
+            - name: Install/upgrade Postgres
+              run: |
+                helm upgrade --install pg bitnami/postgresql -n ${{ env.NAMESPACE }} -f ops/helm/postgres/values.dev.yaml
+                # wait for PG ready
+                kubectl -n ${{ env.NAMESPACE }} rollout status statefulset/pg-postgresql --timeout=240
+
+            - name: Install/upgrade RabbitMQ
+              run: |
+                helm upgrade --install rabbitmq bitnami/rabbitmq -n ${{ env.NAMESPACE }} -f ops/helm/rabbitmq/values.dev.yaml
+                # wait for RabbitMQ ready
+                kubectl -n ${{ env.NAMESPACE }} rollout status statefulset/rabbitmq --timeout=240
+
+            - name: Apply secrets
+              run: |
+                # Needs AGE key in repo secret AGE_PRIVATE_KEY (already set for sops work)
+                mkdir -p ~/.config/sops/age
+                printf '%s\n' "$AGE_PRIVATE_KEY" > ~/.config/sops/age/keys.txt
+                sops -d ops/secrets/dev.app.enc.yaml | kubectl apply -f - -n ${{ env.NAMESPACE }}
+              env:
+                  AGE_PRIVATE_KEY: ${{ secrets.AGE_PRIVATE_KEY }}
+
+            - name: Helm upgrade API
+              run: |
+                helm upgrade --install api ops/helm/api -n ${{ env.NAMESPACE }} \
+                  --set image.repository=$REGISTRY/opsbox-api \
+                  --set image.tag=${{ steps.vars.outputs.tag }}
+
+            - name: Helm upgrade Worker
+              run: |
+                helm upgrade --install worker ops/helm/worker -n ${{ env.NAMESPACE }} \
+                  --set image.repository=$REGISTRY/opsbox-worker \
+                  --set image.tag=${{ steps.vars.outputs.tag }}
+
+            - name: Wait for deployments
+              run: |
+                kubectl -n ${{ env.NAMESPACE }} rollout status deployment/api --timeout=240
+                kubectl -n ${{ env.NAMESPACE }} rollout status deployment/worker --timeout=240
+
+            - name: SMOKE test
+              run: |
+                cat <<'YAML' | kubectl -n ${{ env.NAMESPACE }} apply -f -
+                apiVersion: batch/v1
+                kind: Job
+                metadata: { name: smoke-test-${{1 github.run_id }} }
+                spec:
+                  backoffLimit: 0
+                  template:
+                    spec:
+                      restartPolicy: Never
+                      containers:
+                      - name: curl
+                        image: curlimages/curl:8.2.1
+                        args:
+                        - sh
+                        - -c
+                        - |
+                          set -e
+                          API=http://api.${{ env.NAMESPACE }}.svc.cluster.local:80
+                          # health
+                          test "(curl -s -o /dev/null -w '%{http_code}' $API/health) -eq 200"
+                          # create task
+                          TASK_ID=$(curl -s -X POST $API/tasks -H 'Content-Type: application/json' -d '{"title":"smoke"}' | jq -r .id)
+                          # enqueue task
+                          test "(curl -s -o /dev/null -w '%{http_code}' -X POST $API/tasks/$TASK_ID/run) -eq 202"
+                          # pull status up to 30s
+                          for i in $(seq 1 30); do
+                            STATUS=$(curl -s $API/tasks/$TASK_ID | jq -r .status)
+                            if [ "$STATUS" == "completed" ]; then
+                              echo "Task completed successfully"
+                              exit 0
+                            fi
+                            echo "Task status: $STATUS"
+                          done
+                YAML
+                kubectl -n ${{ env.NAMESPACE }} wait --for=condition=complete --timeout=120s job/smoke-test-${{ github.run_id }}
+                kubectl -n ${{ env.NAMESPACE }} delete job/smoke-test-${{ github.run_id }} --ignore-not-found
