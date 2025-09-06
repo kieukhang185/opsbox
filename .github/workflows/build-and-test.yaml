@@ -130,6 +130,7 @@ jobs:
 
   deploy-and-test:
     needs: [build-push-api, build-push-worker, detect-changes]
+    if: needs.build-push-api.result == 'success' && needs.build-push-worker.result == 'success' || needs.detect-changes.outputs.api-build == 'false' && needs.detect-changes.outputs.worker-build == 'false'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -198,6 +199,12 @@ jobs:
         env:
           AGE_PRIVATE_KEY: ${{ secrets.AGE_PRIVATE_KEY }}
 
+      - name: Helm upgrade Worker
+        run: |
+          helm upgrade --install worker ops/helm/worker -n ${{ env.NAMESPACE }} \
+            --set image.repository=${{ env.REGISTRY }}/opsbox-worker \
+            --set image.tag=${{ steps.vars.outputs.worker-tag }}
+
       - name: Helm upgrade API
         run: |
           helm upgrade --install api ops/helm/api -n ${{ env.NAMESPACE }} \
@@ -205,12 +212,6 @@ jobs:
             --set image.tag=${{ steps.vars.outputs.api-tag }} \
             --set service.port=80 \
             --set containerPort=8000
-
-      - name: Helm upgrade Worker
-        run: |
-          helm upgrade --install worker ops/helm/worker -n ${{ env.NAMESPACE }} \
-            --set image.repository=${{ env.REGISTRY }}/opsbox-worker \
-            --set image.tag=${{ steps.vars.outputs.worker-tag }}
 
       - name: Wait for deployments
         run: |
@@ -226,7 +227,7 @@ jobs:
             API=http://127.0.0.1:8080
 
             echo "HEALTH:"
-            curl -sf "$API/health" | grep -q '"ok"'
+            curl -sf "$API/health" -H 'Content-Type: application/json' | grep -q '"ok"'
 
             echo "CREATE TASK:"
             TASK_ID=$(curl -s -X POST $API/tasks \
