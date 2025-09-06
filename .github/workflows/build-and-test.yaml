@@ -226,8 +226,19 @@ jobs:
             kubectl -n dev port-forward svc/api 8080:8080 >/tmp/pf.log 2>&1 &
             API=http://127.0.0.1:8080
 
-            echo "HEALTH:"
-            curl -sf "$API/health" -H 'Content-Type: application/json' | grep -q '"ok"'
+            echo "POLL STATUS:"
+            time_sleep=30
+            retry=3
+            while [ $retry -gt 0 ]; do
+              if curl -sf "$API/health" | grep -q '"ok"'; then
+                echo "SMOKE: OK"
+              fi
+              echo "Waiting ${time_sleep}s for port-forward to be ready..."
+              sleep "${time_sleep}"
+              retry=$((retry - 1))
+              [[ $retry -eq 0 ]] && eval "echo 'SMOKE: FAIL' && exit 1"
+            done
+            echo "TIMEOUT"; exit 1
 
             echo "CREATE TASK:"
             TASK_ID=$(curl -s -X POST $API/tasks \
@@ -236,18 +247,3 @@ jobs:
 
             echo "RUN TASK:"
             curl -s -X POST $API/tasks/$TASK_ID/run -H 'Content-Type: application/json'
-
-            echo "POLL STATUS:"
-            time_sleep=30
-            retry=3
-            while [ $retry -gt 0 ]; do
-              if curl -sf "$API/health" | grep -q '"ok"'; then
-                echo "SMOKE: OK"
-                exit 0
-              fi
-              echo "Waiting ${time_sleep}s for port-forward to be ready..."
-              sleep "${time_sleep}"
-              retry=$((retry - 1))
-              [[ $retry -eq 0 ]] && eval "echo 'SMOKE: FAIL' && exit 1"
-            done
-            echo "TIMEOUT"; exit 1
