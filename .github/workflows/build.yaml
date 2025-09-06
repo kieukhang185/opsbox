@@ -1,0 +1,129 @@
+name: build-and-push
+
+on:
+  push:
+    branches:
+      - main
+      - dev # Optional: also trigger on dev branch
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch: {}
+
+env:
+  REGISTRY: ghcr.io/${{ github.repository_owner }}
+  SHA_TAG: ${{ github.sha }}
+  LATEST_TAG: latest
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      api-build: ${{ steps.filter.outputs.api }}
+      worker-build: ${{ steps.filter.outputs.worker }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Filter changes
+        id: filter
+        uses: dorny/paths-filter@v2
+        with:
+          filters: |
+            api:
+              - 'api/Dockerfile'
+            worker:
+              - 'worker/Dockerfile'
+  build-push-api:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.api-build == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build API
+        with:
+          path: api/Dockerfile
+        run: |
+          docker build --tag ${{ env.REGISTRY }}/opsbox-api:${{ env.SHA_TAG }} --tag ${{ env.REGISTRY }}/opsbox-api:${{ env.LATEST_TAG }} --file api/Dockerfile api
+
+      - name: Push API
+        run: |
+          docker push ${{ env.REGISTRY }}/opsbox-api:${{ env.SHA_TAG }}
+          docker push ${{ env.REGISTRY }}/opsbox-api:${{ env.LATEST_TAG }}
+
+      - name: SBOM API
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.REGISTRY }}/opsbox-api:${{ env.SHA_TAG }}
+          artifact-name: sbom-api.spdx.json
+
+      - name: Trivy scan API
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: ${{ env.REGISTRY }}/opsbox-api:${{ env.SHA_TAG }}
+          format: 'json'
+          output: 'trivy-api-report.json'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+
+    build-push-worker:
+      needs: detect-changes
+      if: needs.detect-changes.outputs.worker-build == 'true'
+      runs-on: ubuntu-latest
+      permissions:
+        contents: read
+        packages: write
+      steps:
+        - name: Checkout repository
+          uses: actions/checkout@v4
+
+        - name: Set up Docker Buildx
+          uses: docker/setup-buildx-action@v3
+
+        - name: Log in to GitHub Container Registry
+          uses: docker/login-action@v3
+          with:
+            registry: ${{ env.REGISTRY }}
+            username: ${{ github.actor }}
+            token: ${{ secrets.GITHUB_TOKEN }}
+
+        - name: Build Worker
+          with:
+            path: worker/Dockerfile
+          run: |
+            docker build --tag ${{ env.REGISTRY }}/opsbox-worker:${{ env.SHA_TAG }} --tag ${{ env.REGISTRY }}/opsbox-worker:${{ env.LATEST_TAG }} --file worker/Dockerfile worker
+
+        - name: Push Worker
+          run: |
+            docker push ${{ env.REGISTRY }}/opsbox-worker:${{ env.SHA_TAG }}
+            docker push ${{ env.REGISTRY }}/opsbox-worker:${{ env.LATEST_TAG }}
+
+        - name: SBOM Worker
+          uses: anchore/sbom-action@v0
+          with:
+            image: ${{ env.REGISTRY }}/opsbox-worker:${{ env.SHA_TAG }}
+            artifact-name: sbom-worker.spdx.json
+
+        - name: Trivy scan Worker
+          uses: aquasecurity/trivy-action@0.24.0
+          with:
+            image-ref: ${{ env.REGISTRY }}/opsbox-worker:${{ env.SHA_TAG }}
+            format: 'json'
+            output: 'trivy-worker-report.json'
+            exit-code: '1'
+            severity: 'CRITICAL,HIGH'
