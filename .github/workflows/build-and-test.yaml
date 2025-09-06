@@ -223,8 +223,9 @@ jobs:
             set -ex
 
             # Port-forward API to localhost
-            kubectl -n ${{ env.NAMESPACE }} port-forward deploy/api 18080:8080 >/tmp/pf.log 2>&1 &
-            API=http://127.0.0.1:18080
+            kubectl -n ${{ env.NAMESPACE }} port-forward deploy/api 8080:8000 >/tmp/pf.log 2>&1 &
+            API=http://127.0.0.1:8080
+            curl -sf http://127.0.0.1:8080/health
 
             echo "POLL STATUS:"
             time_sleep=30
