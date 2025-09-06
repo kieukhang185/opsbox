@@ -16,3 +16,7 @@ Login default: admin / prom-operator
 
 # opsbox cli 
 export PATH=$PATH://home/ubuntu/.local/bin
+
+# install sops
+curl -LO https://github.com/getsops/sops/releases/download/v3.8.1/sops_3.8.1_amd64.deb
+sudo dpkg -i sops_3.8.1_amd64.deb

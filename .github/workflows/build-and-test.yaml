@@ -147,8 +147,9 @@ jobs:
 
       - name: Resolve image tags
         id: vars
-        run: |
-          echo "tag=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
+        outputs:
+          tag: ${{ steps.set-tag.outputs.tag }}
+        run: echo "tag=${{ github.sha }}" >> "$GITHUB_OUTPUT"
 
       - name: Helm repository
         run: |
@@ -183,7 +184,9 @@ jobs:
         run: |
           helm upgrade --install api ops/helm/api -n ${{ env.NAMESPACE }} \
             --set image.repository=$REGISTRY/opsbox-api \
-            --set image.tag=${{ steps.vars.outputs.tag }}
+            --set image.tag=${{ steps.vars.outputs.tag }} \
+            --set service.port=80 \
+            --set containerPort=8000
 
       - name: Helm upgrade Worker
         run: |
