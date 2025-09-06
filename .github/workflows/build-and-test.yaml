@@ -152,11 +152,21 @@ jobs:
       - name: Helm repository
         run: |
           helm repo add bitnami https://charts.bitnami.com/bitnami
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
           helm repo update
+
+      - name: Install/upgrade Prometheus
+        run: |
+          kubectl get ns monitoring || kubectl create ns monitoring --dry-run=client -o yaml | kubectl apply -f -
+          helm upgrade --install monitoring prometheus-community/prometheus \
+            --namespace monitoring \
+            --set grafana.enabled=true \
+            --set grafana.service.type=ClusterIP \
+            --set prometheus.prometheusSpec.scrapeInterval="15s"
 
       - name: Install/upgrade Postgres
         run: |
-          kubectl get ns ${{ env.NAMESPACE }} || kubectl create ns ${{ env.NAMESPACE }}
+          kubectl get ns ${{ env.NAMESPACE }} || kubectl create ns ${{ env.NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
           helm upgrade --install pg bitnami/postgresql -n ${{ env.NAMESPACE }} -f ops/helm/postgres/values.dev.yaml
           # wait for PG ready
           kubectl -n ${{ env.NAMESPACE }} rollout status statefulset/pg-postgresql --timeout=240s
@@ -181,7 +191,7 @@ jobs:
       - name: Helm upgrade API
         run: |
           helm upgrade --install api ops/helm/api -n ${{ env.NAMESPACE }} \
-            --set image.repository=$REGISTRY/opsbox-api \
+            --set image.repository=${{ env.REGISTRY }}/opsbox-api \
             --set image.tag=${{ steps.vars.outputs.tag }} \
             --set service.port=80 \
             --set containerPort=8000
@@ -189,7 +199,7 @@ jobs:
       - name: Helm upgrade Worker
         run: |
           helm upgrade --install worker ops/helm/worker -n ${{ env.NAMESPACE }} \
-            --set image.repository=$REGISTRY/opsbox-worker \
+            --set image.repository=${{ env.REGISTRY }}/opsbox-worker \
             --set image.tag=${{ steps.vars.outputs.tag }}
 
       - name: Wait for deployments
