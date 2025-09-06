@@ -215,16 +215,16 @@ jobs:
 
       - name: Wait for deployments
         run: |
-          kubectl -n ${{ env.NAMESPACE }} rollout status deployment/api --timeout=240s
-          kubectl -n ${{ env.NAMESPACE }} rollout status deployment/worker --timeout=240s
+          kubectl -n ${{ env.NAMESPACE }} rollout status deploy/api --timeout=240s
+          kubectl -n ${{ env.NAMESPACE }} rollout status deploy/worker --timeout=240s
 
       - name: SMOKE test
         run: |
             set -ex
 
             # Port-forward API to localhost
-            kubectl -n dev port-forward svc/api 8080:8080 >/tmp/pf.log 2>&1 &
-            API=http://127.0.0.1:8080
+            kubectl -n ${{ env.NAMESPACE }} port-forward deploy/api 18080:8080 >/tmp/pf.log 2>&1 &
+            API=http://127.0.0.1:18080
 
             echo "POLL STATUS:"
             time_sleep=30
@@ -247,3 +247,12 @@ jobs:
 
             echo "RUN TASK:"
             curl -s -X POST $API/tasks/$TASK_ID/run -H 'Content-Type: application/json'
+      - name: Print helpful diagnostics on failure
+        if: failure()
+        run: |
+          echo "--- Pods"
+          kubectl -n ${{ env.NAMESPACE }} get pods -o wide || true
+          echo "--- Events"
+          kubectl -n ${{ env.NAMESPACE }} get events --sort-by=.lastTimestamp | tail -n 200 || true
+          echo "--- Logs"
+          kubectl -n ${{ env.NAMESPACE }} logs deploy/api --all-containers --tail=200 || true
