@@ -138,15 +138,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Kubectl/Helm
-        run: |
-          mkdir -p $HOME/.kube
-          echo "${KUBE_CONFIG_DATA}" | base64 -d > "$HOME/.kube/config"
-          chmod 600 $HOME/.kube/config
-          kubectl get ns ${{ env.NAMESPACE }} || kubectl create ns ${{ env.NAMESPACE }}
-          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-        env:
-          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
+      - uses: helm/kind-action@v1
+        with:
+          cluster_name: opsbox
 
       - name: Resolve image tags
         id: vars
@@ -160,6 +154,7 @@ jobs:
 
       - name: Install/upgrade Postgres
         run: |
+          kubectl get ns ${{ env.NAMESPACE }} || kubectl create ns ${{ env.NAMESPACE }}
           helm upgrade --install pg bitnami/postgresql -n ${{ env.NAMESPACE }} -f ops/helm/postgres/values.dev.yaml
           # wait for PG ready
           kubectl -n ${{ env.NAMESPACE }} rollout status statefulset/pg-postgresql --timeout=240
