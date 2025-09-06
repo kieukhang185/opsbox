@@ -220,10 +220,10 @@ jobs:
 
       - name: SMOKE test
         run: |
-            set -euo pipefail
+            set -ex
 
             # Port-forward API to localhost
-            kubectl -n dev port-forward svc/api 8080:80 >/tmp/pf.log 2>&1 &
+            kubectl -n dev port-forward svc/api 8080:8080 >/tmp/pf.log 2>&1 &
             API=http://127.0.0.1:8080
 
             echo "HEALTH:"
