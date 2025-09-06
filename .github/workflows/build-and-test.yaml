@@ -217,7 +217,7 @@ jobs:
         run: |
           kubectl -n ${{ env.NAMESPACE }} rollout status deploy/api --timeout=240s
           kubectl -n ${{ env.NAMESPACE }} rollout status deploy/worker --timeout=240s
-          kubectl -n ${{ env.NAMESPACE }} port-forward svc/api 8080:80 >/tmp/pf.log 2>&1
+          kubectl -n ${{ env.NAMESPACE }} port-forward svc/api 8080:80 >/tmp/pf.log 2>&1 &
 
       - name: Run Helm smoke tests
         run: |
