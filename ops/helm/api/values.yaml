@@ -102,6 +102,22 @@ readinessProbe:
     path: /health
     port: 8000
 
+health:
+  path: /health
+
+tests:
+  basePath: ""     # e.g. "/api/v1" if your API is prefixed
+  createTaskPath: "/tasks/"
+  runTaskPath: "/tasks/%s/run"   # %s will be replaced with task_id
+  # sample body for creating a task (adjust to your schema)
+  createBody: |
+    {
+      "title": "helm-test-task",
+      "payload": {"title":"helm-test"}
+    }
+  # Optional headers (e.g., Authorization) supplied via a Secret (see below)
+  extraCurlArgs: ""   # e.g. '--header "Authorization: Bearer $(cat /secrets/token)"'
+
 # This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
 autoscaling:
   enabled: false

@@ -1,0 +1,113 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "api.fullname" . }}-tasks-e2e"
+  labels:
+    {{- include "api.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+spec:
+  restartPolicy: Never
+  securityContext:
+    seccompProfile: { type: RuntimeDefault }
+  containers:
+    - name: py
+      image: python:3.12-alpine
+      env:
+        - name: PYTHONDONTWRITEBYTECODE
+          value: "1"
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        - name: BASE_URL
+          value: "http://{{ include "api.fullname" . }}:{{ .Values.service.port }}{{ .Values.tests.basePath }}"
+        - name: HEALTH_PATH
+          value: "{{ .Values.health.path | default "/health" }}"
+        - name: CREATE_PATH
+          value: "{{ .Values.tests.createTaskPath }}"
+        - name: RUN_PATH_TPL
+          value: "{{ .Values.tests.runTaskPath }}"
+        - name: CREATE_BODY
+          value: '{{ tpl .Values.tests.createBody . | replace "\n" " " }}'
+        - name: AUTH_HEADER
+          valueFrom:
+            secretKeyRef:
+              name: api-test-secret
+              key: authorization
+              optional: true
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        allowPrivilegeEscalation: false
+        capabilities: { drop: ["ALL"] }
+      command: ["/bin/sh","-c"]
+      args:
+        - |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, time, urllib.request, urllib.error, sys
+
+          base = os.environ["BASE_URL"]
+          health = base + os.environ.get("HEALTH_PATH", "/health")
+          create_url = base + os.environ["CREATE_PATH"]
+          run_tpl = os.environ["RUN_PATH_TPL"]
+          body = os.environ["CREATE_BODY"].encode()
+
+          def call(url, method="GET", data=None, headers=None, tries=1, sleep=0):
+              headers = headers or {}
+              for i in range(tries):
+                  try:
+                      req = urllib.request.Request(url, data=data, headers=headers, method=method)
+                      with urllib.request.urlopen(req, timeout=10) as r:
+                          return r.getcode(), r.read().decode()
+                  except Exception as e:
+                      if i == tries-1: raise
+                      time.sleep(sleep)
+
+          headers = {"Content-Type":"application/json"}
+
+          # Wait for service
+          try:
+              code, _ = call(health, tries=20, sleep=3)
+              print(f"Health check HTTP {code}")
+          except Exception as e:
+              print("Service not ready for health:", e); sys.exit(1)
+
+          # Create task
+          print("==> POST", create_url)
+          try:
+              code, txt = call(create_url, "POST", data=body, headers=headers, tries=10, sleep=3)
+              print("Create HTTP", code); print(txt)
+          except Exception as e:
+              print("Create failed:", e); sys.exit(1)
+          if not (200 <= code < 300): sys.exit("Create returned non-2xx")
+
+          try:
+              j = json.loads(txt)
+          except Exception:
+              print("Invalid JSON on create"); sys.exit(1)
+
+          task_id = j.get("id") or j.get("task_id") or (j.get("data") or {}).get("id")
+          if not task_id:
+              print("Could not parse task_id from create response"); sys.exit(1)
+          print("Parsed task_id:", task_id)
+
+          run_url = base + (run_tpl % task_id)
+          print("==> POST", run_url)
+          try:
+              code, txt = call(run_url, "POST", data=b"{}", headers=headers)
+              print("Run HTTP", code); print(txt)
+          except Exception as e:
+              print("Run failed:", e); sys.exit(1)
+          if not (200 <= code < 300): sys.exit("Run returned non-2xx")
+
+          # Optional success flag
+          try:
+              r = json.loads(txt)
+              flag = r.get("ok") or r.get("success") or r.get("status")
+              if flag and str(flag).lower() not in {"true","ok","success","completed","done"}:
+                  sys.exit(f"Run indicates non-success: {flag}")
+          except Exception:
+              pass
+
+          print("Tasks E2E test PASSED")
+          PY

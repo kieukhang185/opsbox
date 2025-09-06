@@ -1,0 +1,263 @@
+---
+# This flow is used to build and push Docker images to GitHub Container Registry on changes to main branch.
+# and deploy to a Kubernetes cluster and run a smoke test job.
+name: build-and-test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch: {}
+
+env:
+  REGISTRY: ghcr.io/${{ github.repository_owner }}
+  SHA_TAG: ${{ github.sha }}
+  LATEST_TAG: latest
+  NAMESPACE: dev
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      api-build: ${{ steps.filter.outputs.api }}
+      worker-build: ${{ steps.filter.outputs.worker }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Filter changes
+        id: filter
+        uses: dorny/paths-filter@v2
+        with:
+          filters: |
+            api:
+              - 'api/Dockerfile'
+            worker:
+              - 'worker/Dockerfile'
+  build-push-api:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.api-build == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build API
+        run: |
+          docker build --tag ${{ env.REGISTRY }}/opsbox-api:${{ env.SHA_TAG }} --tag ${{ env.REGISTRY }}/opsbox-api:${{ env.LATEST_TAG }} --file api/Dockerfile .
+
+      - name: Push API
+        run: |
+          docker push ${{ env.REGISTRY }}/opsbox-api:${{ env.SHA_TAG }}
+          docker push ${{ env.REGISTRY }}/opsbox-api:${{ env.LATEST_TAG }}
+
+      - name: SBOM API
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.REGISTRY }}/opsbox-api:${{ env.SHA_TAG }}
+          artifact-name: sbom-api.spdx.json
+
+      - name: Trivy scan API
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: ${{ env.REGISTRY }}/opsbox-api:${{ env.SHA_TAG }}
+          format: 'json'
+          output: 'trivy-api-report.json'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+
+  build-push-worker:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.worker-build == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Worker
+        run: |
+          docker build --tag ${{ env.REGISTRY }}/opsbox-worker:${{ env.SHA_TAG }} --tag ${{ env.REGISTRY }}/opsbox-worker:${{ env.LATEST_TAG }} --file worker/Dockerfile .
+
+      - name: Push Worker
+        run: |
+          docker push ${{ env.REGISTRY }}/opsbox-worker:${{ env.SHA_TAG }}
+          docker push ${{ env.REGISTRY }}/opsbox-worker:${{ env.LATEST_TAG }}
+
+      - name: SBOM Worker
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.REGISTRY }}/opsbox-worker:${{ env.SHA_TAG }}
+          artifact-name: sbom-worker.spdx.json
+
+      - name: Trivy scan Worker
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: ${{ env.REGISTRY }}/opsbox-worker:${{ env.SHA_TAG }}
+          format: 'json'
+          output: 'trivy-worker-report.json'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+
+  deploy-and-test:
+    needs: [build-push-api, build-push-worker, detect-changes]
+    if: needs.build-push-api.result == 'success' && needs.build-push-worker.result == 'success' || needs.detect-changes.outputs.api-build == 'false' && needs.detect-changes.outputs.worker-build == 'false'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - uses: helm/kind-action@v1
+        with:
+          cluster_name: opsbox
+
+      - name: Check kind cluster
+        run: kubectl cluster-info --context kind-opsbox
+
+      - name: Resolve image tags
+        id: vars
+        run: |
+          # if not change image use latest tag
+          if [ "${{ needs.detect-changes.outputs.api-build }}" = "false" ]; then
+            echo "API not changed, using latest tag"
+            echo "api-tag=latest" >> "$GITHUB_OUTPUT"
+          else
+            echo "api-tag=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          fi
+          if [ "${{ needs.detect-changes.outputs.worker-build }}" = "false" ]; then
+            echo "Worker not changed, using latest tag"
+            echo "worker-tag=latest" >> "$GITHUB_OUTPUT"
+          else
+            echo "worker-tag=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Helm repository
+        run: |
+          helm repo add bitnami https://charts.bitnami.com/bitnami
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo update
+
+      - name: Install/upgrade Prometheus
+        run: |
+          kubectl get ns monitoring || kubectl create ns monitoring --dry-run=client -o yaml | kubectl apply -f -
+          helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
+            --namespace monitoring \
+            --set grafana.enabled=true \
+            --set grafana.service.type=ClusterIP \
+            --set prometheus.prometheusSpec.scrapeInterval="15s"
+
+      - name: Install/upgrade Postgres
+        run: |
+          kubectl get ns ${{ env.NAMESPACE }} || kubectl create ns ${{ env.NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
+          helm upgrade --install pg bitnami/postgresql -n ${{ env.NAMESPACE }} -f ops/helm/postgres/values.dev.yaml
+          # wait for PG ready
+          kubectl -n ${{ env.NAMESPACE }} rollout status statefulset/pg-postgresql --timeout=240s
+
+      - name: Install/upgrade RabbitMQ
+        run: |
+          helm upgrade --install rabbitmq bitnami/rabbitmq -n ${{ env.NAMESPACE }} -f ops/helm/rabbitmq/values.dev.yaml
+          # wait for RabbitMQ ready
+          kubectl -n ${{ env.NAMESPACE }} rollout status statefulset/rabbitmq --timeout=240s
+
+      - name: Apply secrets
+        run: |
+          # Needs AGE key in repo secret AGE_PRIVATE_KEY (already set for sops work)
+          mkdir -p ~/.config/sops/age
+          curl -LO https://github.com/getsops/sops/releases/download/v3.8.1/sops_3.8.1_amd64.deb
+          sudo dpkg -i sops_3.8.1_amd64.deb
+          printf '%s\n' "$AGE_PRIVATE_KEY" > ~/.config/sops/age/keys.txt
+          sops -d ops/secrets/dev.app.enc.yaml | kubectl apply -f - -n ${{ env.NAMESPACE }}
+        env:
+          AGE_PRIVATE_KEY: ${{ secrets.AGE_PRIVATE_KEY }}
+
+      - name: Helm upgrade Worker
+        run: |
+          helm upgrade --install worker ops/helm/worker -n ${{ env.NAMESPACE }} \
+            --set image.repository=${{ env.REGISTRY }}/opsbox-worker \
+            --set image.tag=${{ steps.vars.outputs.worker-tag }}
+
+      - name: Helm upgrade API
+        run: |
+          helm upgrade --install api ops/helm/api -n ${{ env.NAMESPACE }} \
+            --set image.repository=${{ env.REGISTRY }}/opsbox-api \
+            --set image.tag=${{ steps.vars.outputs.api-tag }} \
+            --set service.port=80 \
+            --set containerPort=8000
+
+      - name: Wait for deployments
+        run: |
+          kubectl -n ${{ env.NAMESPACE }} rollout status deploy/api --timeout=240s
+          kubectl -n ${{ env.NAMESPACE }} rollout status deploy/worker --timeout=240s
+          kubectl -n ${{ env.NAMESPACE }} port-forward svc/api 8080:80 >/tmp/pf.log 2>&1 &
+
+      - name: Run Helm smoke tests
+        run: |
+          helm test api -n ${{ env.NAMESPACE }} --logs
+
+      # - name: SMOKE test
+      #   run: |
+      #       set -ex
+
+      #       # Port-forward API to localhost
+      #       curl -sf http://127.0.0.1:8000/health
+      #       API=http://127.0.0.1:8080
+
+      #       echo "POLL STATUS:"
+      #       time_sleep=30
+      #       retry=3
+      #       while [ $retry -gt 0 ]; do
+      #         if curl -sf "$API/health" | grep -q '"ok"'; then
+      #           echo "SMOKE: OK"
+      #         fi
+      #         echo "Waiting ${time_sleep}s for port-forward to be ready..."
+      #         sleep "${time_sleep}"
+      #         retry=$((retry - 1))
+      #         [[ $retry -eq 0 ]] && eval "echo 'SMOKE: FAIL' && exit 1"
+      #       done
+      #       echo "TIMEOUT"; exit 1
+
+      #       echo "CREATE TASK:"
+      #       TASK_ID=$(curl -s -X POST $API/tasks \
+      #         -H 'Content-Type: application/json' \
+      #         -d '{"title":"smoke"}' | jq -r .id)
+
+      #       echo "RUN TASK:"
+      #       curl -s -X POST $API/tasks/$TASK_ID/run -H 'Content-Type: application/json'
+
+      - name: Print helpful diagnostics on failure
+        if: failure()
+        run: |
+          echo "--- Pods"
+          kubectl -n ${{ env.NAMESPACE }} get pods -o wide || true
+          echo "--- Events"
+          kubectl -n ${{ env.NAMESPACE }} get events --sort-by=.lastTimestamp | tail -n 200 || true
+          echo "--- Logs"
+          kubectl -n ${{ env.NAMESPACE }} logs deploy/api --all-containers --tail=200 || true
