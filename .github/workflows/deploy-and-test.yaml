@@ -80,7 +80,7 @@ jobs:
                 cat <<'YAML' | kubectl -n ${{ env.NAMESPACE }} apply -f -
                 apiVersion: batch/v1
                 kind: Job
-                metadata: { name: smoke-test-${{1 github.run_id }} }
+                metadata: { name: smoke-test-${{ github.run_id }} }
                 spec:
                   backoffLimit: 0
                   template:
