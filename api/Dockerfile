@@ -17,6 +17,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY api/app/ ./app
 
 COPY alembic ./alembic
+
 COPY alembic.ini ./alembic.ini
 
 COPY shared/opsbox_common ./opsbox_common
