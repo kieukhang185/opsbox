@@ -236,12 +236,19 @@ jobs:
                     # pull status up to 30s
                     for i in $(seq 1 30); do
                       STATUS=$(curl -s $API/tasks/$TASK_ID | jq -r .status)
-                      if [ "$STATUS" == "completed" ]; then
-                        echo "Task completed successfully"
-                        exit 0
-                      fi
-                      echo "Task status: $STATUS"
+                      echo "$i: $STATUS"
+                      case "$STATUS" in
+                        SUCCEEDED) exit 0 ;;
+                        FAILED)    exit 1 ;;
+                      esac
+                      sleep 2
                     done
+                    echo "TIMEOUT"; exit 1
+                securityContext:
+                  runAsUser: 10001
+                  runAsGroup: 10001
+                  allowPrivilegeEscalation: false
+                  readOnlyRootFilesystem: true
           YAML
-          kubectl -n ${{ env.NAMESPACE }} wait --for=condition=complete --timeout=120s job/smoke-test-${{ github.run_id }}
+          kubectl -n ${{ env.NAMESPACE }} wait --for=condition=complete --timeout=200s job/smoke-test-${{ github.run_id }}
           kubectl -n ${{ env.NAMESPACE }} delete job/smoke-test-${{ github.run_id }} --ignore-not-found
