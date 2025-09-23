@@ -1,4 +1,4 @@
-# opsbox
+# OpsBox - All Devops in a Box
 [![CI](https://github.com/kieukhang185/opsbox/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/kieukhang185/opsbox/actions/workflows/ci.yaml)
 [![Build-and-test](https://github.com/kieukhang185/opsbox/actions/workflows/build-and-test.yaml/badge.svg?branch=main)](https://github.com/kieukhang185/opsbox/actions/workflows/build-and-test.yaml)
 [![Pre-commit](https://github.com/kieukhang185/opsbox/actions/workflows/pre-commit.yaml/badge.svg?branch=main)](https://github.com/kieukhang185/opsbox/actions/workflows/pre-commit.yaml)
@@ -22,30 +22,27 @@ source .venv/bin/activate
 Install and enable once:
 
 ```bash
-pip3 install pre-commit --break-system-packages
+sudo apt install pre-commit
 export PATH=$PATH:/home/ubuntu/.local/bin
 pre-commit install
 pre-commit run --all-files
 ```
 
 ### Opsbox-cli
+
 ```bash
 opsbox --tag dev # Build API & Worker docker images
 ```
 
 ### CI/CD Flow
 
-#### build-and-test
-Build and Push API & Worker images to github registry (on push & pull-request main branch)
-
-#### ci
-Basic ci flow to check API & Worker (on push dev branch)
-
-#### pre-commit
-Synctax flow to check for Python, Bash, Yaml and so on (on push & pull-request main branch)
+- `build-and-test:` Build and Push API & Worker images to github registry (on push & pull-request main branch)
+- `ci:` Basic ci flow to check API & Worker (on push dev branch)
+- `pre-commit:` Synctax flow to check for Python, Bash, Yaml and so on (on push & pull-request main branch)
 
 
 ### Developer workflow
+
 ```bash
 make help   # List all targets avaliable on Makefile
 make build  # Build api/worker images
