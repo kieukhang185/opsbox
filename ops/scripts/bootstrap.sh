@@ -45,6 +45,19 @@ helm_repos(){
   helm repo update
 }
 
+apply_app_secret(){
+  log_info "Applying application secrets..."
+  export SOPS_AGE_KEY_FILE="${SOPS_AGE_KEY_FILE:-${WORKSPACE}/ops/infra/age.key}"
+  export SOPS_CONFIG="${SOPS_CONFIG:-${WORKSPACE}/.sops.yaml}"
+  export ENCRYPTED_SECRETS_FILE="${ENCRYPTED_SECRETS_FILE:-${WORKSPACE}/ops/secrets/dev.app.enc.yaml}"
+
+  exist "${SOPS_AGE_KEY_FILE}" || { log_error "Please create AGE private key at ${SOPS_AGE_KEY_FILE}"; exit 1; }
+  exist "${ENCRYPTED_SECRETS_FILE}" || { log_error "Please create encrypted secrets file at ${ENCRYPTED_SECRETS_FILE}"; exit 1; }
+  exist "${SOPS_CONFIG}" || { log_error "Please create sops config file at ${SOPS_CONFIG}"; exit 1; }
+
+  sops -d ops/secrets/dev.app.enc.yaml | kubectl -n "${K8S_NAMESPACE}" apply -f - 
+}
+
 install_deps(){
   log_info "Installing Prometheus..."
   helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
@@ -59,19 +72,6 @@ install_deps(){
   kubectl -n "$K8S_NAMESPACE" rollout status statefulset/pg-postgresql --timeout=240s
 }
 
-apply_app_secret(){
-  log_info "Applying application secrets..."
-  export SOPS_AGE_KEY_FILE="${SOPS_AGE_KEY_FILE:-${WORKSPACE}/ops/infra/age.key}"
-  export SOPS_CONFIG="${SOPS_CONFIG:-${WORKSPACE}/.sops.yaml}"
-  export ENCRYPTED_SECRETS_FILE="${ENCRYPTED_SECRETS_FILE:-${WORKSPACE}/ops/secrets/dev.app.enc.yaml}"
-
-  exist "${SOPS_AGE_KEY_FILE}" || { echo "Please create AGE private key at ${SOPS_AGE_KEY_FILE}"; exit 1; }
-  exist "${ENCRYPTED_SECRETS_FILE}" || { echo "Please create encrypted secrets file at ${ENCRYPTED_SECRETS_FILE}"; exit 1; }
-  exist "${SOPS_CONFIG}" || { echo "Please create sops config file at ${SOPS_CONFIG}"; exit 1; }
-
-  sops -d ops/secrets/dev.app.enc.yaml | kubectl -n "${K8S_NAMESPACE}" apply -f - 
-}
-
 build_images(){
   log_info "Building Docker images..."
   exist_image "${API_IMG}" || docker build -f api/Dockerfile -t "${API_IMG}" .
@@ -82,15 +82,6 @@ load_images_into_kind(){
   log_info "Loading images into kind cluster ${KIND_CLUSTER_NAME}..."
   kind load docker-image "${API_IMG}" --name "${KIND_CLUSTER_NAME}"
   kind load docker-image "${WORKER_IMG}" --name "${KIND_CLUSTER_NAME}"
-}
-
-setup_sops(){
-  log_info "Setting up SOPS for secrets management..."
-  export SOPS_AGE_KEY_FILE="${WORKSPACE}/ops/infra/age.key"
-  export SOPS_CONFIG="${WORKSPACE}/.sops.yaml"
-  exist "$SOPS_AGE_KEY_FILE" || { echo "Please create age key file at ${SOPS_AGE_KEY_FILE}"; exit 1; }
-  exist "$SOPS_CONFIG" || { echo "Please create sops config file at ${SOPS_CONFIG}"; exit 1; }
-  sops -d ops/secrets/dev.app.enc.yaml | kubectl apply -f - -n dev
 }
 
 deploy_charts(){
@@ -129,8 +120,8 @@ setup
 create_kind_cluster
 ensure_namespace
 helm_repos
-install_deps
 apply_app_secret
+install_deps
 build_images
 load_images_into_kind
 deploy_charts

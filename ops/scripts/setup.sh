@@ -33,6 +33,7 @@ install_docker() {
         sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
         # Enable and start Docker
+        # TODO: check here why it exit after run: systemctl enable docker
         sudo systemctl enable docker
         sudo systemctl start docker
         sudo usermod -aG docker "${USER}"

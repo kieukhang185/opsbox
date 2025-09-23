@@ -9,7 +9,7 @@ LIBS_DIR="${SCRIPT_DIR}/../libs"
 source "${LIBS_DIR}/log.sh"
 
 # Check if a command exists
-need() { command -v "$1" >/dev/null || { echo "Missing: $1"; exit 1; } ; }
+need() { command -v "$1" >/dev/null || { log_warn "Missing: $1"; exit 1; } ; }
 
 setup_tool(){
   # shellcheck disable=SC1091
@@ -18,7 +18,7 @@ setup_tool(){
 }
 
 # Check and install a command if not exists
-need_install() { command -v "$1" >/dev/null || { echo "Missing: $1"; setup_tool "$1"; }; }
+need_install() { command -v "$1" >/dev/null || { log_info "Missing: $1"; setup_tool "$1"; }; }
 
 # Check if a file or directory exists
 exist(){
@@ -35,10 +35,10 @@ exist(){
 exist_image(){
   # shellcheck disable=SC2086
   if [[ -n "$(docker images -q $1 2> /dev/null)" ]]; then
-    echo "Image $1 existed..."
+    log_info "Image $1 existed..."
     return 0
   else
-    echo "Image $1 does not exist, start building..."
+    log_info "Image $1 does not exist, start building..."
     return 1
   fi
 }
