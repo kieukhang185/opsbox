@@ -30,13 +30,7 @@ kill-pf:
 
 down: kill-pf
 	$(info    ⚡ Tearing down application...)
-	-helm uninstall -n $(NS) api || true
-	-helm uninstall -n $(NS) worker || true
-	-helm uninstall -n $(NS) pg || true
-	-helm uninstall -n $(NS) rabbitmq || true
-	-helm uninstall -n monitoring monitoring || true
-	-kubectl delete ns $(NS) --ignore-not-found=true --wait=true
-	-kubectl delete ns monitoring --ignore-not-found=true --wait=true
+	./ops/scripts/teardown.sh
 
 clean:
 	$(info    ⚡ Cleaning up...)
