@@ -72,6 +72,19 @@ install_deps(){
   kubectl -n "$K8S_NAMESPACE" rollout status statefulset/pg-postgresql --timeout=240s
 }
 
+argo_rollouts(){
+  kubectl get namespace argo-rollouts >/dev/null 2>&1 || kubectl create namespace argo-rollouts --dry-run=client -o yaml | kubectl apply -f -
+  log_info "Ensuring Argo Rollouts is installed..."
+  if ! kubectl -n argo-rollouts get deploy argo-rollouts-controller >/dev/null 2>&1; then
+    log_info "Installing Argo Rollouts..."
+    kubectl create ns argo-rollouts --dry-run=client -o yaml | kubectl apply -f -
+    kubectl -n argo-rollouts apply -f https://github.com/argoproj/argo-rollouts/releases/latest/download/install.yaml
+  else
+    log_info "Argo Rollouts already installed..."
+    return 0
+  fi
+}
+
 build_images(){
   log_info "Building Docker images..."
   exist_image "${API_IMG}" || docker build -f api/Dockerfile -t "${API_IMG}" .
@@ -122,6 +135,7 @@ ensure_namespace
 helm_repos
 apply_app_secret
 install_deps
+argo_rollouts
 build_images
 load_images_into_kind
 deploy_charts

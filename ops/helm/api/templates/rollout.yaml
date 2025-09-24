@@ -1,0 +1,56 @@
+{{- if .Values.rollouts.enabled }}
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: {{ include "api.fullname" . }}
+  labels:
+    {{- include "api.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount | default 1 }}
+  selector:
+    matchLabels:
+      {{- include "api.selectorLabels" . | nindent 6 }}
+  strategy:
+    canary:
+      canaryService: {{ include "api.fullname" . }}-canary
+      stableService: {{ include "api.fullname" . }}
+      # For real traffic splitting, integrate ingress/nginx/istio. Weight still progresses logically without it.
+      steps:
+        - setWeight: {{ index .Values.rollouts.steps 0 | default 10 }}
+        - pause: { duration: {{ .Values.rollouts.pauseSeconds }} }
+        {{- if .Values.rollouts.analysis.enabled }}
+        - analysis:
+            templates:
+              - templateName: {{ include "api.fullname" . }}-error-rate
+        {{- end }}
+        - setWeight: {{ index .Values.rollouts.steps 1 | default 30 }}
+        - pause: { duration: {{ .Values.rollouts.pauseSeconds }} }
+        {{- if .Values.rollouts.analysis.enabled }}
+        - analysis:
+            templates:
+              - templateName: {{ include "api.fullname" . }}-error-rate
+        {{- end }}
+        - setWeight: 100
+  template:
+    metadata:
+      labels:
+        {{- include "api.selectorLabels" . | nindent 8 }}
+        {{- include "api.labels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: api
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          ports: [{ name: http, containerPort: 8000 }]
+          envFrom:
+            - secretRef: { name: opsbox-app-secrets }
+          readinessProbe:
+            httpGet: { path: /health, port: 8000 }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /health, port: 8000 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+{{- toYaml .Values.resources | nindent 12 }}
+{{- end }}
