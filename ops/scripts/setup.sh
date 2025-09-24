@@ -74,7 +74,7 @@ ensure_kubectl(){
 ### --- Function to install Kind ---
 install_kind() {
     echo "⚡ Installing Kind..."
-    KIND_VERSION="v0.23.0"  # change if needed
+    KIND_VERSION="v0.30.0"  # change if needed
     curl -Lo ./kind "https://kind.sigs.k8s.io/dl/${KIND_VERSION}/kind-linux-amd64"
     chmod +x ./kind
     sudo mv ./kind /usr/local/bin/kind
