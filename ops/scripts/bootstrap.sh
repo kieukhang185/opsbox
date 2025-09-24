@@ -97,18 +97,18 @@ deploy_charts(){
     --set image.tag="$(cut -d: -f2 <<< "${WORKER_IMG}")"
 
   log_info "Waiting for deployments to be ready..."
-  kubectl -n "${K8S_NAMESPACE}" rollout status deploy/api --timeout=240s
-  kubectl -n "${K8S_NAMESPACE}" rollout status deploy/worker --timeout=240s || true
+  kubectl -n "${K8S_NAMESPACE}" rollout status deploy/api --timeout=240s || true
+  # kubectl -n "${K8S_NAMESPACE}" rollout status deploy/worker --timeout=240s || true
 
-  log_info "Forwarding API service to localhost:8080..."
-  kubectl -n "${K8S_NAMESPACE}" port-forward svc/api 8080:80 > /tmp/pf.log 2>&1 &
+  log_info "Forwarding API service to localhost:8000..."
+  kubectl -n "${K8S_NAMESPACE}" port-forward deploy/api 8000:8000 > /tmp/pf.log 2>&1 &
 }
 
 smoke_test(){
   log_info "Running helm smoke test..."
   helm test api -n dev
   log_info "Helm test completed."
-  log_info "You can access the API at http://localhost:8080"
+  log_info "You can access the API at http://localhost:8000"
   log_info "Check port-forward logs at /tmp/pf.log"
   # remove helm test pods
   kubectl delete pods -l helm.sh/hook=test

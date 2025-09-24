@@ -40,7 +40,7 @@ delete_ns_object(){
 
 
 delete_kind_cluster(){
-    if need "kind"; then
+    if ! need "kind"; then
         log_error "Kind is not installed, please install it first..."
         exit 1
     fi

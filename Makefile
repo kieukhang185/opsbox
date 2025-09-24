@@ -39,9 +39,9 @@ clean:
 
 reset: down clean
 
-nuke: reset
+nuke: clean
 	$(info    ⚡ Deleting kind cluster...)
-	-kind delete cluster --name $(CLUSTER) || true
+	./ops/scripts/teardown.sh --delete-cluster
 
 prune:
 	-docker system prune -f

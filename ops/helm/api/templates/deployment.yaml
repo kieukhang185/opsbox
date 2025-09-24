@@ -39,9 +39,10 @@ spec:
       initContainers:
         - name: migrate
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          envFrom:
-          - secretRef:
-              name: opsbox-app-secrets
+          {{- with .Values.env }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           command: ["sh","-lc"]
           args: ["alembic upgrade head"]
       containers:
@@ -76,9 +77,10 @@ spec:
           env:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          {{- with .Values.envFrom }}
           envFrom:
-          - secretRef:
-              name: opsbox-app-secrets
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
       {{- with .Values.volumes }}
       volumes:
         {{- toYaml . | nindent 8 }}

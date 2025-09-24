@@ -154,3 +154,8 @@ config:
 
 monitoring:
   enabled: true
+
+envFrom:
+  - secretRef:
+      name: opsbox-app-secrets
+
