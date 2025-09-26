@@ -11,10 +11,26 @@ API_IMG="${API_IMG:-opsbox-api:dev}"
 WORKER_IMG="${WORKER_IMG:-opsbox-worker:dev}"
 BITNAMI_REPO="https://charts.bitnami.com/bitnami"
 PROM_REPO="https://prometheus-community.github.io/helm-charts"
+MONITORING_ENABLED=false
 
 # shellcheck disable=SC1091
 source "${WORKSPACE}/ops/scripts/libs/common.sh"
 pushd "$WORKSPACE" || exit 1
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -m|--monitoring)
+            MONITORING_ENABLED=true
+            shift ;;
+        -h|--help)
+            log_info "Usage: $0 [--monitoring]"
+            exit 0;;
+        *)
+            log_warn "Unknown option: $1"
+            log_info "Usage: $0 [--monitoring]"
+            exit 1;;
+    esac
+done
 
 setup(){
   list_bins="docker kind kubectl helm sops"
@@ -35,13 +51,17 @@ ensure_namespace(){
   log_info "Ensuring namespace ${K8S_NAMESPACE} and ${MONITORING_NAMESPACE}..."
   kubectl get namespace "${K8S_NAMESPACE}" || kubectl create namespace "${K8S_NAMESPACE}" --dry-run=client -o yaml | kubectl apply -f -
   kubectl config set-context --current --namespace="${K8S_NAMESPACE}" >/dev/null 2>&1 || true
-  kubectl get namespace "${MONITORING_NAMESPACE}" || kubectl create namespace "${MONITORING_NAMESPACE}" --dry-run=client -o yaml | kubectl apply -f -
+  if [[ "$MONITORING_ENABLED" = true ]]; then
+    kubectl get namespace "${MONITORING_NAMESPACE}" || kubectl create namespace "${MONITORING_NAMESPACE}" --dry-run=client -o yaml | kubectl apply -f -
+  fi
 }
 
 helm_repos(){
   log_info "Adding helm repos..."
   helm repo add bitnami "${BITNAMI_REPO}" >/dev/null 2>&1 || true
-  helm repo add prometheus-community "${PROM_REPO}" >/dev/null 2>&1 || true
+  if [[ "$MONITORING_ENABLED" = true ]]; then
+    helm repo add prometheus-community "${PROM_REPO}" >/dev/null 2>&1 || true
+  fi
   helm repo update
 }
 
@@ -58,13 +78,19 @@ apply_app_secret(){
   sops -d ops/secrets/dev.app.enc.yaml | kubectl -n "${K8S_NAMESPACE}" apply -f - 
 }
 
-install_deps(){
-  log_info "Installing Prometheus..."
+install_monitoring(){
+  log_info "Installing monitoring stack..."
   helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
     --namespace "${MONITORING_NAMESPACE}" \
     --set grafana.enabled=true \
     --set grafana.service.type=ClusterIP \
     --set prometheus.prometheusSpec.scrapeInterval="15s"
+}
+
+install_deps(){
+  if [[ "$MONITORING_ENABLED" = true ]]; then
+    install_monitoring
+  fi
 
   log_info "Installing Postgres and RabbitMQ..."
   helm upgrade --install pg bitnami/postgresql -n dev -f ops/helm/postgres/values.dev.yaml
@@ -114,7 +140,7 @@ deploy_charts(){
   # kubectl -n "${K8S_NAMESPACE}" rollout status deploy/worker --timeout=240s || true
 
   log_info "Forwarding API service to localhost:8000..."
-  kubectl -n "${K8S_NAMESPACE}" port-forward deploy/api 8000:8000 > /tmp/pf.log 2>&1 &
+  kubectl -n "${K8S_NAMESPACE}" port-forward svc/api 8000:80 > /tmp/pf.log 2>&1 &
 }
 
 smoke_test(){

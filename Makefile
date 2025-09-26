@@ -4,6 +4,7 @@ NS        ?= dev 					# Namespace
 CLUSTER   ?= opsbox 				# Cluser name
 API_IMAGE ?= opsbox-api:dev			# Api image
 WRK_IMAGE ?= opsbox-worker:dev		# Worker image
+OPTION	  ?= ""						# Deploy option
 
 all:
 	$(info  ⚡ Running all build deploy and smoke...)
@@ -15,8 +16,14 @@ build:
 	docker build -f worker/Dockerfile -t opsbox-worker:dev .
 
 deploy:
-	$(info    ⚡ Deploying application...)
-	./ops/scripts/bootstrap.sh
+	@echo "Deploy with monitoring? (y/N):" && read ans; \
+	if [ "$$ans" = "y" ] || [ "$$ans" = "Y" ] || [ "$$ans" = "yes" ] || [ "$$ans" = "YES" ]; then \
+		OPTION="--monitoring"; \
+	else \
+		OPTION=""; \
+	fi; \
+	$(info    ⚡ Deploying application...) \
+	./ops/scripts/bootstrap.sh $$OPTION
 
 smoke:
 	$(info    ⚡ Starting smoke tests...)
