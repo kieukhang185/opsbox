@@ -4,13 +4,16 @@ from fastapi import FastAPI, Response
 from opsbox_common.database import init_db
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
-from app.routes.task import LAT, REQS, route
+from app.routes.k8s import kubectl
+from app.routes.task import LAT, REQS
+from app.routes.task import route as task
 
 app = FastAPI(
     title="OpsBox API",
 )
 
-app.include_router(route)
+app.include_router(task)
+app.include_router(kubectl)
 
 
 @app.on_event("startup")

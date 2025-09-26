@@ -37,6 +37,7 @@ spec:
         {{- include "api.selectorLabels" . | nindent 8 }}
         {{- include "api.labels" . | nindent 8 }}
     spec:
+      serviceAccountName: {{ .Values.serviceAccountName }}
       containers:
         - name: api
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"

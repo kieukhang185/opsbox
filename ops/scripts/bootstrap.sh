@@ -98,6 +98,11 @@ install_deps(){
   kubectl -n "$K8S_NAMESPACE" rollout status statefulset/pg-postgresql --timeout=240s
 }
 
+apply_sa_dev(){
+  log_info "Applying service account..."
+  kubectl -n "${K8S_NAMESPACE}" apply -f "${WORKSPACE}/ops/scripts/templates/rbac-readonly.yaml"
+}
+
 argo_rollouts(){
   kubectl get namespace argo-rollouts >/dev/null 2>&1 || kubectl create namespace argo-rollouts --dry-run=client -o yaml | kubectl apply -f -
   log_info "Ensuring Argo Rollouts is installed..."
@@ -161,6 +166,7 @@ ensure_namespace
 helm_repos
 apply_app_secret
 install_deps
+apply_sa_dev
 argo_rollouts
 build_images
 load_images_into_kind

@@ -169,4 +169,6 @@ rollouts:
     enabled: true
     prometheusAddress: "http://monitoring-kube-prometheus-stack-prometheus.monitoring:9090"
     window: "5m"
-    errorThreshold: "0.05"   # 5% 5xx rate
+    errorThreshold: "0.05"  # 5% 5xx rate
+
+serviceAccountName: "api-sa"
