@@ -61,3 +61,30 @@ def pod_info(namespace: str, pod_name: str):
         "spec": pod.spec.to_dict() if pod.spec else {},
         "status_details": pod.status.to_dict() if pod.status else {},
     }
+
+
+def list_nodes():
+    k8s_client = get_k8s_client()
+    v1 = k8s_client.CoreV1Api()
+    nodes = v1.list_node()
+    return [node.metadata.name for node in nodes.items]
+
+
+def node_info(node_name: str):
+    k8s_client = get_k8s_client()
+    v1 = k8s_client.CoreV1Api()
+    node = v1.read_node(name=node_name)
+    if not node:
+        return {"error": "Node not found"}
+    return {
+        "name": node.metadata.name,
+        "labels": node.metadata.labels,
+        "annotations": node.metadata.annotations,
+        "creation_timestamp": node.metadata.creation_timestamp,
+        "uid": node.metadata.uid,
+        "resource_version": node.metadata.resource_version,
+        "self_link": node.metadata.self_link,
+        "finalizers": node.metadata.finalizers,
+        "spec": node.spec.to_dict() if node.spec else {},
+        "status_details": node.status.to_dict() if node.status else {},
+    }

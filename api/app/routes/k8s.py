@@ -41,3 +41,22 @@ def get_pod(pod_name: str, namespace: str | None = Query("default")):
     if pod:
         return pod
     return {"error": "Pod not found"}
+
+
+@kubectl.get("/nodes")
+def get_nodes():
+    """
+    List all nodes in the Kubernetes cluster.
+    """
+    return k8s.list_nodes()
+
+
+@kubectl.get("/nodes/{node_name}")
+def get_node(node_name: str):
+    """
+    Get details of a specific node.
+    """
+    node_info = k8s.node_info(node_name)
+    if node_info:
+        return node_info
+    return {"error": "Node not found"}
