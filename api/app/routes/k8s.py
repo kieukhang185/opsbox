@@ -18,9 +18,9 @@ def get_namespace(namespace: str):
     """
     Get details of a specific namespace.
     """
-    namespaces = k8s.list_namespaces()
-    if namespace in namespaces:
-        return {"namespace": namespace}
+    namespace_info = k8s.ns_info(namespace)
+    if namespace_info:
+        return namespace_info
     return {"error": "Namespace not found"}
 
 
@@ -37,7 +37,7 @@ def get_pod(pod_name: str, namespace: str | None = Query("default")):
     """
     Get details of a specific pod in a specific namespace.
     """
-    pods = k8s.list_pods(namespace)
-    if pod_name in pods:
-        return {"pod": pod_name, "namespace": namespace}
+    pod = k8s.pod_info(namespace, pod_name)
+    if pod:
+        return pod
     return {"error": "Pod not found"}
