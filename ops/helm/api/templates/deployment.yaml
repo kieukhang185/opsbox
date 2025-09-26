@@ -32,7 +32,11 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "api.serviceAccountName" . }}
+      {{- if not .Values.serviceAccountName }}
+        serviceAccountName: {{ include "api.serviceAccountName" . }}
+      {{- else }}
+        serviceAccountName: {{ .Values.serviceAccountName }}
+      {{- end }}
       {{- with .Values.podSecurityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}

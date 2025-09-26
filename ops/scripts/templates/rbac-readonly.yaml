@@ -1,0 +1,34 @@
+# rbac-readonly.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: api-sa
+  namespace: dev
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: api-readonly
+rules:
+  - apiGroups: [""]
+    resources: ["namespaces", "nodes", "pods", "pods/log", "events"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets", "statefulsets", "daemonsets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["metrics.k8s.io"]
+    resources: ["nodes", "pods"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: api-readonly-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: api-readonly
+subjects:
+  - kind: ServiceAccount
+    name: api-sa
+    namespace: dev
