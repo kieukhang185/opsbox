@@ -9,7 +9,7 @@ cmd_check(){ command -v "$1" &> /dev/null; }
 
 require_pkgs() {
   sudo apt-get update -y
-  sudo apt-get install -y ca-certificates curl gnupg lsb-release
+  sudo apt-get install -y ca-certificates curl gnupg lsb-release make
 }
 
 ### --- Function to install Docker ---
@@ -152,6 +152,20 @@ ensure_sops(){
     else
         install_sops
     fi
+}
+
+install_python3_12_3(){
+    python_version=3.12.3
+    tar_file="Python-${python_version}.tar.xz"
+    wget https://www.python.org/ftp/python/${python_version}/${tar_file}
+    tar -xf "${tar_file}"
+    cd Python-${python_version}
+    /configure --enable-optimizations
+    make -j $(nproc)
+    sudo make altinstall
+    sudo ln -sf $(which python3.12) /usr/bin/python3
+    python3 --version
+    sudo rm -rf ${tar_file} Python-${python_version}
 }
 
 secret_tool(){
