@@ -33,7 +33,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 setup(){
-  list_bins="docker kind kubectl helm sops"
+  list_bins="docker kind kubectl helm sops age"
   for bin in $list_bins; do need_install "$bin"; done
 }
 

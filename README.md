@@ -6,10 +6,10 @@
 A small, real service (API + worker) and all the DevOps around it—containers, Kubernetes, CI/CD, observability, security—so you become production-fluent in Python and Bash.
 
 ## Tools
-|      Tools    |    Version    |      Tools    |    Version    |
-| ------------- | ------------- | ------------- | ------------- |
-|    Python     |     3.12.3    |      Kind     |    v0.30.0    |
-|     Helm      |     3.17.4    |     Kubectl   |    v1.33.4    |
+|      Tools    |    Version    |      Tools    |    Version    |      Tools    |    Version    |
+| ------------- | ------------- | ------------- | ------------- | ------------- | ------------- |
+|    Python     |     3.12.3    |      Kind     |    v0.30.0    |      Sops     |    v3.10.2    |
+|     Helm      |     3.17.4    |     Kubectl   |    v1.33.4    |       Age     |     v1.2.1    |
 
 ### Setup python venv
 ```bash
@@ -31,7 +31,8 @@ pre-commit run --all-files
 ### Opsbox-cli
 
 ```bash
-opsbox --tag dev # Build API & Worker docker images
+opsbox build --tag dev # Build API & Worker docker images
+opsbox push --tag 1.0 --registry hunterbxb # Tag imagr and push to registry
 ```
 
 ### CI/CD Flow
