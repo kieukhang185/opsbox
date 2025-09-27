@@ -75,7 +75,7 @@ apply_app_secret(){
   exist "${ENCRYPTED_SECRETS_FILE}" || { log_error "Please create encrypted secrets file at ${ENCRYPTED_SECRETS_FILE}"; exit 1; }
   exist "${SOPS_CONFIG}" || { log_error "Please create sops config file at ${SOPS_CONFIG}"; exit 1; }
 
-  sops -d ops/secrets/dev.app.enc.yaml | kubectl -n "${K8S_NAMESPACE}" apply -f - 
+  sops -d ops/secrets/dev.app.enc.yaml | kubectl -n "${K8S_NAMESPACE}" apply -f -
 }
 
 install_monitoring(){
