@@ -1,33 +1,57 @@
 ---
 repos:
-    - repo: https://github.com/astral-sh/ruff-pre-commit
-      rev: v0.6.9
+    - repo: https://github.com/pre-commit/pre-commit-hooks
+      rev: v4.6.0
       hooks:
-          - id: ruff
-            args: [--fix]
-          - id: ruff-format
+          - id: trailing-whitespace
+          - id: end-of-file-fixer
+          - id: check-merge-conflict
+          - id: check-yaml
+          - id: check-json
 
-    - repo: https://github.com/pycqa/flake8
-      rev: 6.0.0
-      hooks:
-          - id: flake8
-            additional_dependencies: [flake8==6.0.0]
-            language_version: python3.12.3
-            exclude: ^src/app/alembic
-            files: ^src/
-
+    # ---- Python (backend/) ----
     - repo: https://github.com/psf/black
       rev: 24.8.0
       hooks:
           - id: black
+            name: black (backend)
+            files: ^backend/|^tests/
 
-    - repo: https://github.com/shellcheck-py/shellcheck-py
-      rev: v0.10.0.1
+    - repo: https://github.com/pycqa/flake8
+      rev: 7.1.1
+      hooks:
+          - id: flake8
+            name: flake8 (backend)
+            files: ^backend/|^tests/
+            additional_dependencies:
+                - flake8-bugbear==24.8.19
+                - flake8-comprehensions==3.15.0
+            args: [--config, .flake8]
+
+    - repo: https://github.com/pycqa/isort
+      rev: 5.13.2
+      hooks:
+          - id: isort
+            name: isort (backend)
+            files: ^backend/|^tests/
+
+
+    - repo: https://github.com/pre-commit/mirrors-mypy
+      rev: 'v1.10.0'
+      hooks:
+          - id: mypy
+            name: mypy (backend)
+            files: ^backend/
+            args: ["--ignore-missing-imports", "--pretty"]
+
+    # Shell check for .sh file
+    - repo: https://github.com/koalaman/shellcheck-precommit
+      rev: v0.11.0
       hooks:
           - id: shellcheck
-            name: shellcheck (ops/scripts)
-            args: [--exclude, SC2015]
-            files: ^ops/scripts/.*\.sh$
+            name: shellcheck (scripts/shell-scripts)
+            files: ^scripts/shell-scripts/.*\.sh$
+            args: [--severity=warning, --external-sources]
 
     - repo: https://github.com/AleksaC/hadolint-py
       rev: v2.12.1b3
@@ -36,17 +60,20 @@ repos:
             args: [--ignore, DL3008, --ignore, DL3007, --ignore, DL4006]
             exclude: ^src/app/alembic
 
-    - repo: https://github.com/pre-commit/pre-commit-hooks
-      rev: v4.6.0 # Use the latest stable version
-      hooks:
-          - id: check-yaml
-            args: [--allow-multiple-documents]
-
     - repo: https://github.com/adrienverge/yamllint
-      rev: v1.35.1 # Use the latest stable version
+      rev: v1.35.1 #Use the latest stable version
       hooks:
           - id: yamllint
             args: [-c, .config.yaml]
+
+    # Frontend
+    - repo: https://github.com/pre-commit/mirrors-prettier
+      rev: v3.1.0
+      hooks:
+          - id: prettier
+            name: prettier (frontend)
+            files: ^frontend/.*\.(ts|tsx|js|jsx|json|css|md|yml|yaml)$
+            language_version: system
 
 # Exclude non-code and generated paths globally
 exclude: |
