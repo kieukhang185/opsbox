@@ -4,6 +4,7 @@ import axios from "axios";
 interface ImportMetaEnv {
   VITE_API_BASE_URL: string;
   VITE_AUTH_TOKEN?: string;
+  VITE_API_BASE_WS_URL?: string;
   // add other env variables as needed
 }
 

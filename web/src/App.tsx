@@ -13,6 +13,12 @@ export default function App() {
           >
             Dashboard
           </NavLink>
+          <NavLink
+            className="block rounded px-3 py-2 hover:bg-slate-100"
+            to="/events"
+          >
+            Events
+          </NavLink>
         </nav>
       </aside>
       {/* Content */}
