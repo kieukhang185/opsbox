@@ -19,46 +19,60 @@ export default function DataTable<T>({
   hasMore,
 }: Props<T>) {
   return (
-    <div className="overflow-hidden rounded-xl border bg-white">
-      <table className="min-w-full divide-y divide-slate-200">
-        <thead className="bg-slate-50">
-          <tr>
+    <div className="overflow-hidden rounded-xl border border-zinc-300 bg-white shadow">
+      <table className="min-w-full">
+        <thead className="bg-zinc-100">
+          <tr className="border-b border-zinc-300">
             {columns.map((c) => (
               <th
                 key={String(c.key)}
-                className="px-4 py-2 text-left text-xs font-medium text-slate-600 uppercase tracking-wider"
+                className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-zinc-700"
               >
                 {c.header}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody>
           {rows.map((r, i) => (
-            <tr key={i} className="hover:bg-slate-50">
+            <tr
+              key={i}
+              className="odd:bg-white even:bg-zinc-50 hover:bg-zinc-100 border-b border-zinc-200"
+            >
               {columns.map((c) => (
                 <td
                   key={String(c.key)}
-                  className="px-4 py-2 text-sm text-slate-800"
+                  className="px-4 py-2 text-sm text-zinc-900"
                 >
                   {c.render ? c.render(r) : String((r as any)[c.key])}
                 </td>
               ))}
             </tr>
           ))}
+          {!rows.length && (
+            <tr>
+              <td
+                className="px-4 py-8 text-sm text-zinc-600"
+                colSpan={columns.length}
+              >
+                No data.
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
+
       {onLoadMore && (
-        <div className="p-3 text-center">
+        <div className="p-3 text-center border-t border-zinc-300 bg-zinc-50">
           {hasMore ? (
             <button
               onClick={onLoadMore}
-              className="rounded-lg border px-3 py-1.5 text-sm hover:bg-slate-50"
+              className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-800 hover:bg-zinc-100"
             >
               Load more
             </button>
           ) : (
-            <span className="text-xs text-slate-500">No more rows</span>
+            <span className="text-xs text-zinc-600">No more rows</span>
           )}
         </div>
       )}

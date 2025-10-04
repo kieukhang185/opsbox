@@ -1,13 +1,9 @@
 import DataTable from "@/components/DataTable";
-import { useQuery } from "@tanstack/react-query";
-import { get } from "@/lib/api";
-import type { ListResponse, Namespace } from "@/types";
+import type { Namespace } from "@/types";
+import { useList } from "@/hooks/useList";
 
 export default function NamespacesPage() {
-  const q = useQuery({
-    queryKey: ["namespaces"],
-    queryFn: () => get<ListResponse<Namespace>>("/k8s/namespaces"),
-  });
+  const q = useList<Namespace>("/kubectl/namespaces", { limit: 50 });
 
   return (
     <div className="space-y-3">
@@ -18,7 +14,9 @@ export default function NamespacesPage() {
           { key: "status", header: "Status" },
           { key: "creation_timestamp", header: "Created" },
         ]}
-        rows={q.data?.items ?? []}
+        rows={q.items}
+        onLoadMore={q.loadMore}
+        hasMore={q.hasMore}
       />
     </div>
   );

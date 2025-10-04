@@ -1,15 +1,13 @@
 import DataTable from "@/components/DataTable";
 import { NodeReadyBadge } from "@/components/StatusBadge";
-import { useQuery } from "@tanstack/react-query";
-import { get } from "@/lib/api";
-import type { ListResponse, Node } from "@/types";
+import type { Node } from "@/types";
 import { fmtBytes, fmtCpu } from "@/lib/format";
+import { useList } from "@/hooks/useList";
 
 export default function NodesPage() {
-  const q = useQuery({
-    queryKey: ["nodes"],
-    queryFn: () =>
-      get<ListResponse<Node>>("/k8s/nodes", { include_metrics: true }),
+  const q = useList<Node>("/kubectl/nodes", {
+    include_metrics: true,
+    limit: 50,
   });
 
   return (
@@ -45,7 +43,9 @@ export default function NodesPage() {
             render: (n) => n.addresses?.internal || "—",
           },
         ]}
-        rows={q.data?.items ?? []}
+        rows={q.items}
+        onLoadMore={q.loadMore}
+        hasMore={q.hasMore}
       />
     </div>
   );

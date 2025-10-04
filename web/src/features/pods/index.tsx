@@ -1,14 +1,10 @@
 import DataTable from "@/components/DataTable";
 import { PodPhaseBadge } from "@/components/StatusBadge";
-import { useQuery } from "@tanstack/react-query";
-import { get } from "@/lib/api";
-import type { ListResponse, Pod } from "@/types";
+import type { Pod } from "@/types";
+import { useList } from "@/hooks/useList";
 
 export default function PodsPage() {
-  const q = useQuery({
-    queryKey: ["pods"],
-    queryFn: () => get<ListResponse<Pod>>("/k8s/pods"),
-  });
+  const q = useList<Pod>("/kubectl/pods", { limit: 50 });
 
   return (
     <div className="space-y-3">
@@ -25,7 +21,9 @@ export default function PodsPage() {
           { key: "node", header: "Node" },
           { key: "start_time", header: "Start" },
         ]}
-        rows={q.data?.items ?? []}
+        rows={q.items}
+        onLoadMore={q.loadMore}
+        hasMore={q.hasMore}
       />
     </div>
   );
