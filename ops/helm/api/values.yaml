@@ -93,21 +93,32 @@ resources:
   # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
 
 # This is to setup the liveness and readiness probes more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+startupProbe:
+  httpGet:
+    path: /health
+    port: 8000
+  periodSeconds: 5
+  failureThreshold: 60
 livenessProbe:
   httpGet:
     path: /health
     port: 8000
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  failureThreshold: 3
 readinessProbe:
   httpGet:
     path: /health
     port: 8000
+  periodSeconds: 5
+  failureThreshold: 12
 
 health:
   path: /health
 
 tests:
   basePath: ""     # e.g. "/api/v1" if your API is prefixed
-  createTaskPath: "/tasks/"
+  createTaskPath: "/tasks"
   runTaskPath: "/tasks/%s/run"   # %s will be replaced with task_id
   # sample body for creating a task (adjust to your schema)
   createBody: |
@@ -153,7 +164,7 @@ config:
   databaseUrl: "postgresql+psycopg://postgres:postgres@pg-postgresql.dev.svc.cluster.local:5432/postgres"
 
 monitoring:
-  enabled: true
+  enabled: false # Set to true to create a ServiceMonitor resource
 
 envFrom:
   - secretRef:
