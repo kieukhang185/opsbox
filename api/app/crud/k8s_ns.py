@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 
-from fastapi import Query
+from fastapi import Query, HTTPException
 
 from app.infra.kube import get_k8s_client
 
@@ -39,11 +39,15 @@ def get_namespaces(
     v1 = k8s.CoreV1Api()
 
     if namespace:
-        res = v1.list_namespace(
-            name=namespace, label_selector=label_selector, limit=limit, _continue=_continue
-        )
-    else:
-        res = v1.list_namespace(label_selector=label_selector, limit=limit, _continue=_continue)
+        try:
+            n = v1.read_namespace(name=namespace)
+            return {"items": [_ns(n)], "continue": None}
+        except k8s.exceptions.ApiException as e:  # type: ignore[attr-defined]
+            if e.status == 404:
+                raise HTTPException(status_code=404, detail="Namespace not found") from e
+            raise
+
+    res = v1.list_namespace(label_selector=label_selector, limit=limit, _continue=_continue)
 
     return {
         "items": [_ns(n) for n in res.items],
