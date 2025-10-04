@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Query
 
 from app.crud import k8s_events, k8s_nodes, k8s_ns, k8s_pods
@@ -8,9 +10,11 @@ kubectl = APIRouter(prefix="/kubectl", tags=["kubectl"])
 NAMESPACE_DESC = Query(None, description="If set, get this namespace only")
 LABEL_SELECTOR_DESC = Query(None, description="e.g. app=api,component=web")
 FIELD_SELECTOR_DESC = Query(None, description="e.g. status.phase=Running")
-LIMIT_DESC = Query(200, ge=1, le=2000)
+LIMIT_DESC = Annotated[int, Query(ge=1, le=2000)]
 CONTINUE_DESC = Query(None, description="Continue token from previous query")
-SINCE_SECONDS_DESC = Query(None, ge=1, description="Return events newer than now - N seconds")
+SINCE_SECONDS_DESC = Annotated[
+    int | None, Query(ge=1, description="Return events newer than now - N seconds")
+]
 SINCE_TIME_DESC = Query(
     None, description='Return events newer than this time, e.g. "2025-09-26T04:00:00Z"'
 )
@@ -24,7 +28,7 @@ INCLUDE_METRICS_DESC = Query(
 def get_namespace(
     namespace: str | None = NAMESPACE_DESC,
     label_selector: str | None = LABEL_SELECTOR_DESC,
-    limit: int | None = LIMIT_DESC,
+    limit: LIMIT_DESC = 200,
     _continue: str | None = CONTINUE_DESC,
 ):
     """
@@ -71,7 +75,7 @@ def get_pod(
 def get_nodes(
     label_selector: str | None = LABEL_SELECTOR_DESC,
     field_selector: str | None = FIELD_SELECTOR_DESC,
-    limit: int = LIMIT_DESC,
+    limit: LIMIT_DESC = 200,
     _continue: str | None = CONTINUE_DESC,
     include_metrics: bool = INCLUDE_METRICS_DESC,
 ):
@@ -107,7 +111,7 @@ def list_node_pods(
     name: str,
     namespace: str | None = NAMESPACE_DESC,
     label_selector: str | None = LABEL_SELECTOR_DESC,
-    limit: int = LIMIT_DESC,
+    limit: LIMIT_DESC = 200,
     _continue: str | None = CONTINUE_DESC,
 ):
     node = k8s_nodes.list_node_pods(name, namespace, label_selector, limit, _continue)
@@ -121,9 +125,9 @@ def list_events(
     namespace: str | None = NAMESPACE_DESC,
     label_selector: str | None = LABEL_SELECTOR_DESC,
     field_selector: str | None = FIELD_SELECTOR_DESC,
-    limit: int = LIMIT_DESC,
+    limit: LIMIT_DESC = 200,
     _continue: str | None = CONTINUE_DESC,
-    since_seconds: str | None = SINCE_SECONDS_DESC,
+    since_seconds: SINCE_SECONDS_DESC = None,
     since_time: str | None = SINCE_TIME_DESC,
     only_warning: bool = ONLY_WARNING_DESC,
 ):

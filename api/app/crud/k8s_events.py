@@ -1,21 +1,15 @@
 import datetime
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import Query
 
 from app.infra.kube import get_k8s_client
 
-NAMESPACE_DESC = Query(None, description="If set, get this namespace only")
-FIELD_SELECTOR_DESC = Query(
-    None, description="e.g. involvedObject.kind=Pod,involvedObject.name=my-pod" or "type=Warning"
-)
-LIMIT_DESC = Query(100, ge=1, le=1000)
-CONTINUE_DESC = Query(None, description="Continue token from previous query")
-SINCE_SECOND_DESC = Query(None, ge=1, description="Return events newer than now - N seconds")
-SINCE_TIME_DESC = Query(
-    None, description='Return events newer than this time, e.g. "2025-09-26T04:00:00Z"'
-)
-ONLY_WARNING_DESC = Query(False, description="Filter to type=Warning")
+NAMESPACE_DESC = Query(None)
+FIELD_SELECTOR_DESC = Query(None)
+CONTINUE_DESC = Query(None)
+SINCE_TIME_DESC = Query(None)
+ONLY_WARNING_DESC = Query(False)
 
 
 def _event_to_dict(e) -> dict[str, Any]:
@@ -62,9 +56,9 @@ def list_events(
     namespace: str | None = NAMESPACE_DESC,
     label_selector: str | None = None,
     field_selector: str | None = FIELD_SELECTOR_DESC,
-    limit: int = LIMIT_DESC,
+    limit: Annotated[int, Query(ge=1, le=2000)] = 200,
     _continue: str | None = CONTINUE_DESC,
-    since_seconds: str | None = SINCE_SECOND_DESC,
+    since_seconds: Annotated[int | None, Query(ge=1)] = None,
     since_time: str | None = SINCE_TIME_DESC,
     only_warning: bool = ONLY_WARNING_DESC,
 ):
@@ -112,7 +106,7 @@ def list_events(
                 t = d.get(k)
                 if t:
                     # k8s python client returns datetime objects already
-                    tt = t if isinstance(t, datetime) else _parse_since_time(str(t))
+                    tt = t if isinstance(t, datetime.datetime) else _parse_since_time(str(t))
                     if tt and tt >= cutoff:
                         return True
             return False

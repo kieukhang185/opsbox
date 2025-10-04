@@ -1,18 +1,17 @@
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import HTTPException, Query
 
 from app.infra.kube import get_k8s_client
 
-NAMESPACE_DESC = Query(None, description="If omitted, lists across all namespaces")
-LABEL_SELECTOR_DESC = Query(None, description="e.g. app=api,component=web")
-FIELD_SELECTOR_DESC = Query(None, description="e.g. status.phase=Running")
-LIMIT_DESC = Query(200, ge=1, le=2000)
-CONTINUE_DESC = Query(None, description="Continue token from previous query")
-
-TAIL_LINES_DESC = Query(500, ge=1, le=10000)
-SINCE_SECONDS_DESC = Query(None, ge=1)
-PREVIOUS_DESC = Query(False, description="Get logs for previously terminated container")
+NAMESPACE_DESC = Query(None)
+LABEL_SELECTOR_DESC = Query(None)
+FIELD_SELECTOR_DESC = Query(None)
+LIMIT_DESC = Annotated[int, Query(ge=1, le=2000, description="Pagination limit")]
+CONTINUE_DESC = Query(None)
+TAIL_LINES_DESC = Annotated[int, Query(ge=1, le=10000)]
+SINCE_SECONDS_DESC = Annotated[int | None, Query(ge=1)]
+PREVIOUS_DESC = Query(False)
 
 
 def _pod(p) -> dict[str, Any]:
@@ -72,7 +71,7 @@ def get_pods(
     namespace: str | None = NAMESPACE_DESC,
     label_selector: str | None = LABEL_SELECTOR_DESC,
     field_selector: str | None = FIELD_SELECTOR_DESC,
-    limit: int = LIMIT_DESC,
+    limit: LIMIT_DESC = 200,
     _continue: str | None = CONTINUE_DESC,
 ):
     k8s = get_k8s_client()
@@ -114,7 +113,7 @@ def get_pod_logs(
     namespace: str,
     name: str,
     container: str | None = None,
-    tail_lines: int | None = TAIL_LINES_DESC,
+    tail_lines: TAIL_LINES_DESC = 500,
     since_seconds: int | None = SINCE_SECONDS_DESC,
     previous: bool = PREVIOUS_DESC,
 ):

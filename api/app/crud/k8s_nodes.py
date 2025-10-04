@@ -1,16 +1,14 @@
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import HTTPException, Query
 
 from app.infra.kube import get_k8s_client
 
-NAMESPACE_DESC = Query(None, description="If omitted, lists across all namespaces")
-LABEL_SELECTOR_DESC = Query(None, description="e.g. app=api,component=web")
-LIMIT_DESC = Query(200, ge=1, le=2000)
-CONTINUE_DESC = Query(None, description="Continue token from previous query")
-INCLUDE_METRICS_DESC = Query(
-    False, description="Join CPU/mem usage from metrics.k8s.io if available"
-)
+NAMESPACE_DESC = Query(None)
+LABEL_SELECTOR_DESC = Query(None)
+LIMIT_DESC = Annotated[int, Query(ge=1, le=2000)]
+CONTINUE_DESC = Query(None)
+INCLUDE_METRICS_DESC = Query(False)
 
 
 def _node_ready(conditions) -> bool:
@@ -69,7 +67,7 @@ def _node_summary(n) -> dict[str, Any]:
 def list_nodes(
     label_selector: str | None = None,
     field_selector: str | None = None,
-    limit: int = LIMIT_DESC,
+    limit: LIMIT_DESC = 200,
     _continue: str | None = CONTINUE_DESC,
     include_metrics: bool = INCLUDE_METRICS_DESC,
 ):
@@ -132,7 +130,7 @@ def list_node_pods(
     name: str,
     namespace: str | None = NAMESPACE_DESC,
     label_selector: str | None = LABEL_SELECTOR_DESC,
-    limit: int = LIMIT_DESC,
+    limit: LIMIT_DESC = 200,
     _continue: str | None = CONTINUE_DESC,
 ):
     k8s = get_k8s_client()

@@ -1,12 +1,12 @@
 from datetime import datetime
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import HTTPException, Query
 
 from app.infra.kube import get_k8s_client
 
-LIMIT_DESC = Query(200, ge=1, le=2000)
-CONTINUE_DESC = Query(None, description="Continue token from previous query")
+LIMIT_DESC = Annotated[int, Query(ge=1, le=2000)]
+CONTINUE_DESC = Query(None)
 
 
 def _ns(item) -> dict[str, Any]:
@@ -32,7 +32,7 @@ def _ns(item) -> dict[str, Any]:
 def get_namespaces(
     namespace: str | None = None,
     label_selector: str | None = None,
-    limit: int = LIMIT_DESC,
+    limit: LIMIT_DESC = 200,
     _continue: str | None = CONTINUE_DESC,
 ):
     k8s = get_k8s_client()
