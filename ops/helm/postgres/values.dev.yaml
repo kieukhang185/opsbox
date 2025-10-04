@@ -1,13 +1,25 @@
 global:
+  imageRegistry: ghcr.io
   postgresql:
     auth:
       username: postgres
       password: postgres
       database: postgres
+  security:
+    allowInsecureImages: true
+image:
+  registry: ghcr.io
+  repository: kieukhang185/postgresql
+  tag: "17.6.0"
 primary:
   persistence:
     enabled: false
-resources:
-  requests:
-    cpu: 50m
-    memory: 128Mi
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+readReplicas:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi

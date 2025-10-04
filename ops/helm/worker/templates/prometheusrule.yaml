@@ -1,3 +1,4 @@
+{{- if .Values.monitoring.enabled }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -16,3 +17,4 @@ spec:
       annotations:
         summary: "Worker jobs failing"
         description: "One or more jobs failed in the last 5 minutes."
+{{- end }}
