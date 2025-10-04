@@ -1,6 +1,7 @@
 import time
 
 from fastapi import FastAPI, Response
+from fastapi.middleware.cors import CORSMiddleware
 from opsbox_common.database import init_db
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
@@ -12,8 +13,18 @@ app = FastAPI(
     title="OpsBox API",
 )
 
+origins = ["http://localhost:5173", "http://localhost:3000"]
+
 app.include_router(task)
 app.include_router(kubectl)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,  # ["*"] for dev only
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.on_event("startup")
