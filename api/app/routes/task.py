@@ -1,13 +1,12 @@
 from typing import Annotated, TypeAlias
 from uuid import UUID
 
+from app.crud import task as task_crud
+from app.schemas import TaskCreate, TaskOut, TaskUpdate
 from fastapi import APIRouter, Depends, HTTPException, status
 from opsbox_common.database import get_db
 from prometheus_client import Counter, Histogram
 from sqlalchemy.orm import Session
-
-from app.crud import task as task_crud
-from app.schemas import TaskCreate, TaskOut, TaskUpdate
 
 # Define metrics
 REQS = Counter("api_requests_total", "API requests", ["method", "path", "status"])

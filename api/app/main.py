@@ -1,12 +1,11 @@
 import time
 
-from fastapi import FastAPI, Response
-from opsbox_common.database import init_db
-from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
-
 from app.routes.k8s import kubectl
 from app.routes.task import LAT, REQS
 from app.routes.task import route as task
+from fastapi import FastAPI, Response
+from opsbox_common.database import init_db
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
 app = FastAPI(
     title="OpsBox API",

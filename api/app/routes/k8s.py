@@ -1,18 +1,31 @@
-from api.app.crud import k8s_events, k8s_nodes, k8s_pods
 from fastapi import APIRouter, Query
-from typing import Optional
 
-from app.crud import k8s_ns
+from api.app.crud import k8s_events, k8s_nodes, k8s_pods, k8s_ns
 
 kubectl = APIRouter(prefix="/kubectl", tags=["kubectl"])
 
 
+NAMESPACE_DESC = Query(None, description="If set, get this namespace only")
+LABEL_SELECTOR_DESC = Query(None, description="e.g. app=api,component=web")
+FIELD_SELECTOR_DESC = Query(None, description="e.g. status.phase=Running")
+LIMIT_DESC = Query(200, ge=1, le=2000)
+CONTINUE_DESC = Query(None, description="Continue token from previous query")
+SINCE_SECONDS_DESC = Query(None, ge=1, description="Return events newer than now - N seconds")
+SINCE_TIME_DESC = Query(
+    None, description='Return events newer than this time, e.g. "2025-09-26T04:00:00Z"'
+)
+ONLY_WARNING_DESC = Query(False, description="Filter to type=Warning")
+INCLUDE_METRICS_DESC = Query(
+    False, description="Join CPU/mem usage from metrics.k8s.io if available"
+)
+
+
 @kubectl.get("/namespaces")
 def get_namespace(
-    namespace: str,
-    label_selector: Optional[str] | None,
-    limit: Optional[int] | None,
-    _continue: Optional[str] = None
+    namespace: str | None = NAMESPACE_DESC,
+    label_selector: str | None = LABEL_SELECTOR_DESC,
+    limit: int | None = LIMIT_DESC,
+    _continue: str | None = CONTINUE_DESC,
 ):
     """
     Get details of a specific namespace.
@@ -25,11 +38,11 @@ def get_namespace(
 
 @kubectl.get("/pods")
 def list_pods(
-    namespace: Optional[str] = Query(None, description="If omitted, lists across all namespaces"),
-    label_selector: Optional[str] = Query(None, description="e.g. app=api,component=web"),
-    field_selector: Optional[str] = Query(None, description="e.g. status.phase=Running"),
-    limit: int = Query(200, ge=1, le=2000),
-    _continue: Optional[str] = None,
+    namespace: str | None = NAMESPACE_DESC,
+    label_selector: str | None = LABEL_SELECTOR_DESC,
+    field_selector: str | None = FIELD_SELECTOR_DESC,
+    limit: int = LIMIT_DESC,
+    _continue: str | None = CONTINUE_DESC,
 ):
     """
     List all pods in a specific namespace.
@@ -55,17 +68,19 @@ def get_pod(
 
 
 @kubectl.get("/nodes")
-def get_node(
-    label_selector: Optional[str] = None,
-    field_selector: Optional[str] = None,
-    limit: int = Query(200, ge=1, le=2000),
-    _continue: Optional[str] = None,
-    include_metrics: bool = Query(False),
+def get_nodes(
+    label_selector: str | None = LABEL_SELECTOR_DESC,
+    field_selector: str | None = FIELD_SELECTOR_DESC,
+    limit: int = LIMIT_DESC,
+    _continue: str | None = CONTINUE_DESC,
+    include_metrics: bool = INCLUDE_METRICS_DESC,
 ):
     """
     Get details of a specific node.
     """
-    node_info = k8s_nodes.list_nodes(label_selector, field_selector, limit, _continue, include_metrics)
+    node_info = k8s_nodes.list_nodes(
+        label_selector, field_selector, limit, _continue, include_metrics
+    )
     if node_info:
         return node_info
     return {"error": "Nodes not found"}
@@ -90,10 +105,10 @@ def get_node_metrics(name: str):
 @kubectl.get("/nodes/{name}/pods")
 def list_node_pods(
     name: str,
-    namespace: Optional[str] = Query(None),
-    label_selector: Optional[str] = None,
-    limit: int = Query(200, ge=1, le=2000),
-    _continue: Optional[str] = None,
+    namespace: str | None = NAMESPACE_DESC,
+    label_selector: str | None = LABEL_SELECTOR_DESC,
+    limit: int = LIMIT_DESC,
+    _continue: str | None = CONTINUE_DESC,
 ):
     node = k8s_nodes.list_node_pods(name, namespace, label_selector, limit, _continue)
     if node:
@@ -103,14 +118,14 @@ def list_node_pods(
 
 @kubectl.get("/events")
 def list_events(
-    namespace: Optional[str] = Query("default"),
-    label_selector: Optional[str] = None,
-    field_selector: Optional[str] = None,
-    limit: int = Query(100, ge=1, le=1000),
-    _continue: Optional[str] = None,
-    since_seconds: Optional[str] = Query(None, ge=1),
-    since_time: Optional[str] = Query(None),
-    only_warning: bool = Query(False)
+    namespace: str | None = NAMESPACE_DESC,
+    label_selector: str | None = LABEL_SELECTOR_DESC,
+    field_selector: str | None = FIELD_SELECTOR_DESC,
+    limit: int = LIMIT_DESC,
+    _continue: str | None = CONTINUE_DESC,
+    since_seconds: str | None = SINCE_SECONDS_DESC,
+    since_time: str | None = SINCE_TIME_DESC,
+    only_warning: bool = ONLY_WARNING_DESC,
 ):
     """
     Get events of a specific namespace if provide or all namespace
@@ -123,5 +138,5 @@ def list_events(
         _continue,
         since_seconds,
         since_time,
-        only_warning
+        only_warning,
     )

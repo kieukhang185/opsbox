@@ -1,13 +1,12 @@
 from typing import Annotated, TypeAlias
 from uuid import UUID
 
+from app.run_queue import enqueue_run_task
+from app.schemas import TaskCreate, TaskUpdate
 from fastapi import Depends
 from opsbox_common.database import get_db
 from opsbox_common.models import Task, TaskStatus
 from sqlalchemy.orm import Session
-
-from app.run_queue import enqueue_run_task
-from app.schemas import TaskCreate, TaskUpdate
 
 DBSession: TypeAlias = Annotated[Session, Depends(get_db)]
 
