@@ -1,7 +1,8 @@
 from typing import Any
 
-from app.infra.kube import get_k8s_client
 from fastapi import HTTPException, Query
+
+from app.infra.kube import get_k8s_client
 
 NAMESPACE_DESC = Query(None, description="If omitted, lists across all namespaces")
 LABEL_SELECTOR_DESC = Query(None, description="e.g. app=api,component=web")
@@ -107,7 +108,10 @@ def get_node(name: str):
         return _node_summary(n)
     except k8s.exceptions.ApiException as e:  # type: ignore[attr-defined]
         if e.status == 404:
-            raise HTTPException(status_code=404, detail="Node not found")
+            raise HTTPException(
+                status_code=404,
+                detail="Node not found"
+            ) from e
         raise
 
 
@@ -121,8 +125,9 @@ def get_node_metrics(name: str):
     except k8s.exceptions.ApiException as e:  # type: ignore[attr-defined]
         if e.status == 404:
             raise HTTPException(
-                status_code=404, detail="Metrics not found (is metrics-server installed?)"
-            )
+                status_code=404,
+                detail="Metrics not found (is metrics-server installed?)"
+            ) from e
         raise
 
 

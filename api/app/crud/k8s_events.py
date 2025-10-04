@@ -1,8 +1,9 @@
 import datetime
 from typing import Any
 
-from app.infra.kube import get_k8s_client
 from fastapi import Query
+
+from app.infra.kube import get_k8s_client
 
 NAMESPACE_DESC = Query(None, description="If set, get this namespace only")
 FIELD_SELECTOR_DESC = Query(

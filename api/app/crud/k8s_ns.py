@@ -1,8 +1,9 @@
 from datetime import datetime
 from typing import Any
 
-from app.infra.kube import get_k8s_client
 from fastapi import Query
+
+from app.infra.kube import get_k8s_client
 
 LIMIT_DESC = Query(200, ge=1, le=2000)
 CONTINUE_DESC = Query(None, description="Continue token from previous query")

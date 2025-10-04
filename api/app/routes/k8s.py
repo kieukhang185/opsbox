@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Query
 
-from api.app.crud import k8s_events, k8s_nodes, k8s_pods, k8s_ns
+from api.app.crud import k8s_events, k8s_nodes, k8s_ns, k8s_pods
 
 kubectl = APIRouter(prefix="/kubectl", tags=["kubectl"])
 
