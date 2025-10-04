@@ -15,6 +15,24 @@ export default function App() {
           </NavLink>
           <NavLink
             className="block rounded px-3 py-2 hover:bg-slate-100"
+            to="/namespaces"
+          >
+            Namespaces
+          </NavLink>
+          <NavLink
+            className="block rounded px-3 py-2 hover:bg-slate-100"
+            to="/nodes"
+          >
+            Nodes
+          </NavLink>
+          <NavLink
+            className="block rounded px-3 py-2 hover:bg-slate-100"
+            to="/pods"
+          >
+            Pods
+          </NavLink>
+          <NavLink
+            className="block rounded px-3 py-2 hover:bg-slate-100"
             to="/events"
           >
             Events
