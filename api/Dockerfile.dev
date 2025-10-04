@@ -1,0 +1,37 @@
+FROM python:3.12-slim AS base
+
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+
+RUN useradd -m -u 10001 app
+
+WORKDIR /app
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl netcat-openbsd \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY api/requirements.txt .
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY api/app/ ./app
+
+COPY alembic ./alembic
+
+COPY alembic.ini ./alembic.ini
+
+COPY shared/opsbox_common ./opsbox_common
+
+RUN chown -R app:app /app/app/data
+
+COPY entrypoint.sh /entrypoint.sh
+
+RUN chmod +x /entrypoint.sh
+
+USER app
+
+EXPOSE 8001
+
+HEALTHCHECK --interval=10s --timeout=2s CMD python -c "import socket;s=socket.socket();s.settimeout(1);s.connect(('127.0.0.1',8001))" || exit 1
+
+ENTRYPOINT ["/entrypoint.sh"]

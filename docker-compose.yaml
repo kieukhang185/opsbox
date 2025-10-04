@@ -4,10 +4,10 @@ services:
   api:
     build:
       context: .
-      dockerfile: ./api/Dockerfile
+      dockerfile: ./api/Dockerfile.dev
     image: opsbox-api:compose
     ports:
-      - "8000:8000"
+      - "8001:8001"
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
