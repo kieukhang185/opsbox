@@ -1,48 +1,56 @@
 import DataTable from "@/components/DataTable";
-import { useEffect, useRef, useState } from "react";
-import { get } from "@/lib/api";
-import { makeWS } from "@/lib/ws";
-import type { Event, ListResponse } from "@/types";
+import { useEventStream } from "@/hooks/useEventStream";
+import type { Event } from "@/types";
 
 export default function EventsPage() {
-  const [rows, setRows] = useState<Event[]>([]);
-  const wsRef = useRef<WebSocket | null>(null);
-
-  useEffect(() => {
-    // initial load (warnings last 15 min)
-    get<ListResponse<Event>>("/kubectl/events", {
-      only_warnings: true,
-      since_seconds: 900,
-    })
-      .then((d) => setRows(d.items ?? []))
-      .catch(() => {});
-
-    // live stream
-    const ws = makeWS("/kubectl/events/stream");
-    wsRef.current = ws;
-    ws.onmessage = (ev) => {
-      try {
-        const e: Event = JSON.parse(ev.data);
-        setRows((prev) => [e, ...prev].slice(0, 2000));
-      } catch {}
-    };
-    ws.onclose = () => {
-      // basic reconnect
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
-    };
-    return () => {
-      ws.close();
-    };
-  }, []);
+  // Live stream + HTTP fallback; last 15m warnings as your default filter
+  const { rows, state, paused, pause, resume } = useEventStream(
+    "/kubectl/events/stream",
+    {
+      maxRows: 2000,
+      fallbackPollMs: 3000,
+      params: { only_warnings: true, since_seconds: 900 },
+    },
+  );
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold">Events (live)</h2>
-        <span className="text-xs text-slate-500">Streaming…</span>
+        <h2 className="text-base font-semibold">Events</h2>
+        <div className="flex items-center gap-2">
+          <span
+            className={
+              "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold border " +
+              (state === "live"
+                ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                : state === "reconnecting"
+                  ? "bg-amber-100 text-amber-800 border-amber-300"
+                  : state === "paused"
+                    ? "bg-zinc-100 text-zinc-800 border-zinc-300"
+                    : "bg-rose-100 text-rose-800 border-rose-300")
+            }
+            title="Connection status"
+          >
+            {state}
+          </span>
+          {paused ? (
+            <button
+              onClick={resume}
+              className="text-xs rounded-md border border-zinc-300 bg-white px-2 py-1 text-zinc-800 hover:bg-zinc-100"
+            >
+              Resume
+            </button>
+          ) : (
+            <button
+              onClick={pause}
+              className="text-xs rounded-md border border-zinc-300 bg-white px-2 py-1 text-zinc-800 hover:bg-zinc-100"
+            >
+              Pause
+            </button>
+          )}
+        </div>
       </div>
+
       <DataTable<Event>
         columns={[
           { key: "last_timestamp", header: "Time" },
