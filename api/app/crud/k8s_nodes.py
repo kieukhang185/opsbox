@@ -108,10 +108,7 @@ def get_node(name: str):
         return _node_summary(n)
     except k8s.exceptions.ApiException as e:  # type: ignore[attr-defined]
         if e.status == 404:
-            raise HTTPException(
-                status_code=404,
-                detail="Node not found"
-            ) from e
+            raise HTTPException(status_code=404, detail="Node not found") from e
         raise
 
 
@@ -125,8 +122,7 @@ def get_node_metrics(name: str):
     except k8s.exceptions.ApiException as e:  # type: ignore[attr-defined]
         if e.status == 404:
             raise HTTPException(
-                status_code=404,
-                detail="Metrics not found (is metrics-server installed?)"
+                status_code=404, detail="Metrics not found (is metrics-server installed?)"
             ) from e
         raise
 

@@ -106,10 +106,7 @@ def get_pod(namespace: str, name: str):
         return _pod(p)
     except k8s.exceptions.ApiException as e:  # type: ignore[attr-defined]
         if e.status == 404:
-            raise HTTPException(
-                status_code=404,
-                detail="Pod not found"
-            ) from e
+            raise HTTPException(status_code=404, detail="Pod not found") from e
         raise
 
 
@@ -140,8 +137,5 @@ def get_pod_logs(
         return {"container": container, "lines": data.splitlines()}
     except k8s.exceptions.ApiException as e:  # type: ignore[attr-defined]
         if e.status == 404:
-            raise HTTPException(
-                status_code=404,
-                detail="Pod or container not found"
-            ) from e
+            raise HTTPException(status_code=404, detail="Pod or container not found") from e
         raise
