@@ -88,7 +88,7 @@ repos:
       # check ruff locally to auto-fix issues
       - id: check-ruff-local
         name: Check ruff
-        entry: bash -c "ruff check . --fix"
+        entry: bash -c "ruff check . --fix && ruff format --check ."
         language: system
         files: \.py$
 
