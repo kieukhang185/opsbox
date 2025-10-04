@@ -1,10 +1,17 @@
+[tool.ruff]
 line-length = 100
 target-version = "py311"
 
-[lint]
+[tool.ruff.lint]
+# Enable common rule families: pycodestyle (E, W), pyflakes (F), isort (I), bugbear (B), pyupgrade (UP)
 select = ["E", "F", "W", "I", "B", "UP"]
-ignore = ["E501"]  # let black handle line length
 
-[format]
+# Ignore codes that conflict with Black or that you want to suppress
+ignore = [
+  "E501",  # Black handles line length
+  "B904",  # optional: raise ... from e
+]
+
+[tool.ruff.format]
 quote-style = "double"
 indent-style = "space"

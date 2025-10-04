@@ -17,7 +17,7 @@ app.include_router(kubectl)
 
 
 @app.on_event("startup")
-def on_startup():
+def on_startup() -> None:
     # For dev/test convenience. In production use Alembic.
     init_db()
 
