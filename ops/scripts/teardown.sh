@@ -14,7 +14,7 @@
 set -euo pipefail
 
 # shellcheck disable=SC2155
-export WORKSPACE="$(find "${HOME}" -type d -name opsbox)"
+export WORKSPACE="$(pwd)"
 
 KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-opsbox}"
 K8S_NAMESPACE="${K8S_NAMESPACE:-dev}"

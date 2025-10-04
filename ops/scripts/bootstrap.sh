@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 # shellcheck disable=SC2155
-export WORKSPACE="$(find "${HOME}" -type d -name opsbox)"
+export WORKSPACE="$(pwd)"
 
 KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-opsbox}"
 K8S_NAMESPACE="${K8S_NAMESPACE:-dev}"
@@ -142,7 +142,7 @@ deploy_charts(){
 
   log_info "Waiting for deployments to be ready..."
   kubectl -n "${K8S_NAMESPACE}" rollout status deploy/api --timeout=240s || true
-  # kubectl -n "${K8S_NAMESPACE}" rollout status deploy/worker --timeout=240s || true
+  kubectl -n "${K8S_NAMESPACE}" rollout status deploy/worker --timeout=240s || true
 
   log_info "Forwarding API service to localhost:8000..."
   kubectl -n "${K8S_NAMESPACE}" port-forward svc/api 8000:80 > /tmp/pf.log 2>&1 &

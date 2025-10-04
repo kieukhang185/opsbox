@@ -147,7 +147,7 @@ cleanup_kubectl(){
 cleanup_helm(){
     if exists helm; then
         log "Helm releases"
-        run "helm list --all-namespaces"
+        run "helm list --all-namespaces || true"
 
         log "Helm cache"
         run "rm -rf ~/.cache/helm"
