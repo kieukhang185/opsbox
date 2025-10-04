@@ -101,6 +101,7 @@ install_helm(){
     wget https://get.helm.sh/${tar_file}
     tar -zxvf ${tar_file}
     sudo mv linux-amd64/helm /usr/local/bin/helm
+    rm -rf ${tar_file} linux-amd64
     cmd_check helm && echo "✅ Helm installed successfully: $(helm version --short)" || echo "Helm installation failed"
 }
 
@@ -154,20 +155,6 @@ ensure_sops(){
     fi
 }
 
-install_python3_12_3(){
-    python_version=3.12.3
-    tar_file="Python-${python_version}.tar.xz"
-    wget https://www.python.org/ftp/python/${python_version}/${tar_file}
-    tar -xf "${tar_file}"
-    cd Python-${python_version}
-    /configure --enable-optimizations
-    make -j $(nproc)
-    sudo make altinstall
-    sudo ln -sf $(which python3.12) /usr/bin/python3
-    python3 --version
-    sudo rm -rf ${tar_file} Python-${python_version}
-}
-
 secret_tool(){
     ensure_age
     ensure_sops
@@ -184,11 +171,12 @@ setup_k8s_tools(){
 setup_pre_commit(){
     sudo apt install -y pre-commit
     pre-commit install
-    pre-commit run --all-file
 }
 
 setup(){
     echo "Setting up..."
+    sudo apt update -y
+    sudo apt install -y git wget nodejs npm
     require_pkgs
     setup_k8s_tools
     secret_tool
