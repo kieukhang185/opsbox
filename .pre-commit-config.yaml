@@ -83,6 +83,15 @@ repos:
         files: ^web/.*\.(ts|tsx|js|jsx|json|css|md|yml|yaml)$
         language_version: system
 
+  - repo: local
+    hooks:
+      # check ruff locally to auto-fix issues
+      - id: check-ruff-local
+        name: Check ruff
+        entry: bash -c "ruff check . --fix"
+        language: system
+        files: \.py$
+
 exclude: |
   (?x)^(
     ops/helm/|

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 
-from fastapi import Query, HTTPException
+from fastapi import HTTPException, Query
 
 from app.infra.kube import get_k8s_client
 
