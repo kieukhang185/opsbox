@@ -5,7 +5,7 @@ on:
     push:
         branches: [dev]
 jobs:
-    test-and-build:
+    ci:
         runs-on: ubuntu-latest
         services:
             postgres:

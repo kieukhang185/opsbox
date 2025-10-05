@@ -4,6 +4,7 @@ NS        ?= dev 					# Namespace
 CLUSTER   ?= opsbox 				# Cluser name
 API_IMAGE ?= opsbox-api:dev			# Api image
 WRK_IMAGE ?= opsbox-worker:dev		# Worker image
+OPTION	  ?= ""						# Deploy option
 
 all:
 	$(info  ⚡ Running all build deploy and smoke...)
@@ -15,8 +16,14 @@ build:
 	docker build -f worker/Dockerfile -t opsbox-worker:dev .
 
 deploy:
-	$(info    ⚡ Deploying application...)
-	./ops/scripts/bootstrap.sh
+	@echo "Deploy with monitoring? (y/N):" && read ans; \
+	if [ "$$ans" = "y" ] || [ "$$ans" = "Y" ] || [ "$$ans" = "yes" ] || [ "$$ans" = "YES" ]; then \
+		OPTION="--monitoring"; \
+	else \
+		OPTION=""; \
+	fi; \
+	$(info    ⚡ Deploying application...) \
+	./ops/scripts/bootstrap.sh $$OPTION
 
 smoke:
 	$(info    ⚡ Starting smoke tests...)
@@ -30,13 +37,7 @@ kill-pf:
 
 down: kill-pf
 	$(info    ⚡ Tearing down application...)
-	-helm uninstall -n $(NS) api || true
-	-helm uninstall -n $(NS) worker || true
-	-helm uninstall -n $(NS) pg || true
-	-helm uninstall -n $(NS) rabbitmq || true
-	-helm uninstall -n monitoring monitoring || true
-	-kubectl delete ns $(NS) --ignore-not-found=true --wait=true
-	-kubectl delete ns monitoring --ignore-not-found=true --wait=true
+	./ops/scripts/teardown.sh
 
 clean:
 	$(info    ⚡ Cleaning up...)
@@ -45,9 +46,9 @@ clean:
 
 reset: down clean
 
-nuke: reset
+nuke: clean
 	$(info    ⚡ Deleting kind cluster...)
-	-kind delete cluster --name $(CLUSTER) || true
+	./ops/scripts/teardown.sh --delete-cluster
 
 prune:
 	-docker system prune -f

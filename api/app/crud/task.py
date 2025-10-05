@@ -6,8 +6,8 @@ from opsbox_common.database import get_db
 from opsbox_common.models import Task, TaskStatus
 from sqlalchemy.orm import Session
 
-from .run_queue import enqueue_run_task
-from .schemas import TaskCreate, TaskUpdate
+from app.run_queue import enqueue_run_task
+from app.schemas import TaskCreate, TaskUpdate
 
 DBSession: TypeAlias = Annotated[Session, Depends(get_db)]
 
@@ -54,6 +54,7 @@ def delete(db: DBSession, task_id: UUID) -> bool:
 
 
 def run_task(db: DBSession, task_id: UUID) -> dict:
+    # TODO: check worker status, if not running raise error
     task = get_task(db, task_id)
     if not task:
         raise ValueError(404, "Task not found")

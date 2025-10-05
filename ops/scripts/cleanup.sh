@@ -147,7 +147,7 @@ cleanup_kubectl(){
 cleanup_helm(){
     if exists helm; then
         log "Helm releases"
-        run "helm list --all-namespaces"
+        run "helm list --all-namespaces || true"
 
         log "Helm cache"
         run "rm -rf ~/.cache/helm"
@@ -201,7 +201,7 @@ cleanup_snaps(){
 
 cleanup_logs_misc() {
   log "Rotated logs under /var/log"
-  run "sudo rm -f /var/log/*.gz /var/log/*.[0-9] /var/log/*-???????"
+  run "sudo rm -rf /var/log/*.gz /var/log/*.[0-9] /var/log/*-???????"
 }
 
 summary_big_files() {

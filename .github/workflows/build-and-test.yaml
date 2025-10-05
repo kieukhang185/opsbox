@@ -60,7 +60,8 @@ jobs:
 
       - name: Build API
         run: |
-          docker build --tag ${{ env.REGISTRY }}/opsbox-api:${{ env.SHA_TAG }} --tag ${{ env.REGISTRY }}/opsbox-api:${{ env.LATEST_TAG }} --file api/Dockerfile .
+          docker build --tag ${{ env.REGISTRY }}/opsbox-api:${{ env.SHA_TAG }} \
+            --tag ${{ env.REGISTRY }}/opsbox-api:${{ env.LATEST_TAG }} --file api/Dockerfile .
 
       - name: Push API
         run: |
@@ -105,7 +106,8 @@ jobs:
 
       - name: Build Worker
         run: |
-          docker build --tag ${{ env.REGISTRY }}/opsbox-worker:${{ env.SHA_TAG }} --tag ${{ env.REGISTRY }}/opsbox-worker:${{ env.LATEST_TAG }} --file worker/Dockerfile .
+          docker build --tag ${{ env.REGISTRY }}/opsbox-worker:${{ env.SHA_TAG }} \
+            --tag ${{ env.REGISTRY }}/opsbox-worker:${{ env.LATEST_TAG }} --file worker/Dockerfile .
 
       - name: Push Worker
         run: |
@@ -129,7 +131,10 @@ jobs:
 
   deploy-and-test:
     needs: [build-push-api, build-push-worker, detect-changes]
-    if: needs.build-push-api.result == 'success' && needs.build-push-worker.result == 'success' || needs.detect-changes.outputs.api-build == 'false' && needs.detect-changes.outputs.worker-build == 'false'
+    if: needs.build-push-api.result == 'success'
+      && needs.build-push-worker.result == 'success'
+      || needs.detect-changes.outputs.api-build
+      == 'false' && needs.detect-changes.outputs.worker-build == 'false'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -167,7 +172,8 @@ jobs:
 
       - name: Install/upgrade Prometheus
         run: |
-          kubectl get ns monitoring || kubectl create ns monitoring --dry-run=client -o yaml | kubectl apply -f -
+          kubectl get ns monitoring || kubectl create ns monitoring --dry-run=client -o yaml \
+            | kubectl apply -f -
           helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
             --namespace monitoring \
             --set grafana.enabled=true \
@@ -176,14 +182,17 @@ jobs:
 
       - name: Install/upgrade Postgres
         run: |
-          kubectl get ns ${{ env.NAMESPACE }} || kubectl create ns ${{ env.NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
-          helm upgrade --install pg bitnami/postgresql -n ${{ env.NAMESPACE }} -f ops/helm/postgres/values.dev.yaml
+          kubectl get ns ${{ env.NAMESPACE }} || kubectl create ns ${{ env.NAMESPACE }} \
+            --dry-run=client -o yaml | kubectl apply -f -
+          helm upgrade --install pg bitnami/postgresql -n ${{ env.NAMESPACE }} \
+            -f ops/helm/postgres/values.dev.yaml
           # wait for PG ready
           kubectl -n ${{ env.NAMESPACE }} rollout status statefulset/pg-postgresql --timeout=240s
 
       - name: Install/upgrade RabbitMQ
         run: |
-          helm upgrade --install rabbitmq bitnami/rabbitmq -n ${{ env.NAMESPACE }} -f ops/helm/rabbitmq/values.dev.yaml
+          helm upgrade --install rabbitmq bitnami/rabbitmq -n ${{ env.NAMESPACE }} \
+            -f ops/helm/rabbitmq/values.dev.yaml
           # wait for RabbitMQ ready
           kubectl -n ${{ env.NAMESPACE }} rollout status statefulset/rabbitmq --timeout=240s
 

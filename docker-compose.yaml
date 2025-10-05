@@ -1,0 +1,26 @@
+---
+version: "3.8"
+services:
+  api:
+    build:
+      context: .
+      dockerfile: ./api/Dockerfile.dev
+    image: opsbox-api:compose
+    ports:
+      - "8001:8001"
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+  postgres:
+    image: postgres:16
+    ports:
+      - "5432:5432"
+    env_file:
+      - .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./api/app/data/init:/docker-entrypoint-initdb.d
+
+volumes:
+  postgres_data:

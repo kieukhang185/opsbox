@@ -1,0 +1,34 @@
+{{- if and .Values.rollouts.enabled .Values.rollouts.analysis.enabled }}
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: {{ include "api.fullname" . }}-error-rate
+  labels:
+    {{- include "api.labels" . | nindent 4 }}
+spec:
+  args:
+    - name: prometheusAddress
+      value: {{ .Values.rollouts.analysis.prometheusAddress | quote }}
+    - name: window
+      value: {{ .Values.rollouts.analysis.window | quote }}
+    - name: threshold
+      value: {{ .Values.rollouts.analysis.errorThreshold | quote }}
+  metrics:
+    - name: api-error-rate
+      interval: 30s
+      count: 6 # 3 minutes @ 30s, must fit in your pause window
+      failureLimit: 1
+      provider:
+        prometheus:
+          address: "{{`{{args.prometheusAddress}}`}}"
+          query: |
+            (
+              sum(rate(api_requests_total{status=~"5.."}[{{`{{args.window}}`}}]))
+            )
+            /
+            (
+              sum(rate(api_requests_total[{{`{{args.window}}`}}]))
+            )
+      successCondition: result < {{`{{args.threshold}}`}}
+      failureCondition: result >= {{`{{args.threshold}}`}}
+{{- end }}

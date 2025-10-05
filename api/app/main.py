@@ -1,31 +1,42 @@
 import time
-from typing import Annotated, TypeAlias
-from uuid import UUID
 
-from fastapi import Depends, FastAPI, HTTPException, Response, status
-from opsbox_common.database import get_db, init_db
-from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
-from sqlalchemy.orm import Session
+from fastapi import FastAPI, Response
+from fastapi.middleware.cors import CORSMiddleware
+from opsbox_common.database import init_db
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
-from . import crud
-from .schemas import TaskCreate, TaskOut, TaskUpdate
-
-# Define metrics
-REQS = Counter("api_requests_total", "API requests", ["method", "path", "status"])
-LAT = Histogram("api_request_latency_seconds", "API request latency", ["method", "path"])
+from app.routes.k8s import kubectl
+from app.routes.task import LAT, REQS
+from app.routes.task import route as task
 
 app = FastAPI(
     title="OpsBox API",
 )
 
+origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+app.include_router(task)
+app.include_router(kubectl)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,  # ["*"] for dev only
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["Authorization", "Content-Type", "*"],
+    expose_headers=["*"],
+)
+
 
 @app.on_event("startup")
-def on_startup():
+def on_startup() -> None:
     # For dev/test convenience. In production use Alembic.
     init_db()
-
-
-DBSession: TypeAlias = Annotated[Session, Depends(get_db)]
 
 
 # Create middleware records
@@ -46,49 +57,7 @@ def read_health():
     return {"status": "ok"}
 
 
-@app.post("/tasks/", response_model=TaskOut)
-def create_task(payload: TaskCreate, db: DBSession):
-    return crud.create(db, payload)
-
-
 @app.get("/metrics")
 def read_metrics():
     """Metrics endpoint exposes value in Prometheus format"""
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
-
-
-@app.get("/tasks/", response_model=list[TaskOut])
-def list_tasks(db: DBSession):
-    return crud.list_tasks(db)
-
-
-@app.get("/tasks/{task_id}", response_model=TaskOut)
-def get_task(task_id: UUID, db: DBSession):
-    task = crud.get_task(db, task_id)
-    if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
-    return task
-
-
-@app.put("/tasks/{task_id}", response_model=TaskOut)
-def update_task(task_id: UUID, payload: TaskUpdate, db: DBSession):
-    task = crud.update(db, task_id, payload)
-    if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
-    return task
-
-
-@app.delete("/tasks/{task_id}", response_model=dict)
-def delete_task(task_id: UUID, db: DBSession):
-    status = crud.delete(db, task_id)
-    if not status:
-        raise HTTPException(status_code=404, detail="Task not found")
-    return {"status": "deleted"}
-
-
-@app.post("/tasks/{task_id}/run", status_code=status.HTTP_201_CREATED)
-def run_task_endpoint(task_id: UUID, db: DBSession):
-    task = get_task(task_id, db)
-    if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
-    return crud.run_task(db, task_id)

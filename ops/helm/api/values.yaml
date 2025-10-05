@@ -93,21 +93,32 @@ resources:
   # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
 
 # This is to setup the liveness and readiness probes more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+startupProbe:
+  httpGet:
+    path: /health
+    port: 8000
+  periodSeconds: 5
+  failureThreshold: 60
 livenessProbe:
   httpGet:
     path: /health
     port: 8000
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  failureThreshold: 3
 readinessProbe:
   httpGet:
     path: /health
     port: 8000
+  periodSeconds: 5
+  failureThreshold: 12
 
 health:
   path: /health
 
 tests:
   basePath: ""     # e.g. "/api/v1" if your API is prefixed
-  createTaskPath: "/tasks/"
+  createTaskPath: "/tasks"
   runTaskPath: "/tasks/%s/run"   # %s will be replaced with task_id
   # sample body for creating a task (adjust to your schema)
   createBody: |
@@ -153,4 +164,22 @@ config:
   databaseUrl: "postgresql+psycopg://postgres:postgres@pg-postgresql.dev.svc.cluster.local:5432/postgres"
 
 monitoring:
+  enabled: false # Set to true to create a ServiceMonitor resource
+
+envFrom:
+  - secretRef:
+      name: opsbox-app-secrets
+
+rollouts:
   enabled: true
+  steps:
+    - 10 # % weights in order: 10 -> pause -> 30 -> pause -> 100
+    - 30
+  pauseSeconds: 60
+  analysis:
+    enabled: true
+    prometheusAddress: "http://monitoring-kube-prometheus-stack-prometheus.monitoring:9090"
+    window: "5m"
+    errorThreshold: "0.05"  # 5% 5xx rate
+
+serviceAccountName: "api-sa"

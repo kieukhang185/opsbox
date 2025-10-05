@@ -144,4 +144,4 @@ env:
     value: "9090"
 
 monitoring:
-  enabled: true
+  enabled: false # Set to true to create a ServiceMonitor resource

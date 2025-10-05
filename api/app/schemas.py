@@ -5,6 +5,7 @@ from opsbox_common.models import TaskStatus
 from pydantic import BaseModel, ConfigDict
 
 
+# Table for tasks
 class TaskBase(BaseModel):
     title: str | None
 

@@ -9,7 +9,7 @@ cmd_check(){ command -v "$1" &> /dev/null; }
 
 require_pkgs() {
   sudo apt-get update -y
-  sudo apt-get install -y ca-certificates curl gnupg lsb-release
+  sudo apt-get install -y ca-certificates curl gnupg lsb-release make
 }
 
 ### --- Function to install Docker ---
@@ -30,20 +30,13 @@ install_docker() {
         | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
         sudo apt-get update -y
-        sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-
-        # Enable and start Docker
-        sudo systemctl enable docker
-        sudo systemctl start docker
-        sudo usermod -aG docker "${USER}"
-        newgrp docker
+        sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin || true
 
         cmd_check docker && echo "✅ Docker installed successfully: $(docker --version)" || echo "Docker installation failed"
     else
         echo "Unsupported system: ${sys}. Exiting."
         exit 1
     fi
-
 }
 
 ensure_docker(){
@@ -57,7 +50,17 @@ ensure_docker(){
 
 install_kubectl(){
     echo "⚡ Installing Kubectl..."
-    sudo snap install kubectl --classic
+    version="v1.33.4" # for same version at all
+    # sudo apt-get install kubectl
+    curl -LO "https://dl.k8s.io/release/${version}/bin/linux/amd64/kubectl"
+    curl -LO "https://dl.k8s.io/release/${version}/bin/linux/amd64/kubectl.sha256"
+    echo "$(cat kubectl.sha256) kubectl" | sha256sum --check
+    chmod +x ./kubectl
+    mkdir -pv /usr/local/bin
+    sudo mv ./kubectl /usr/local/bin/kubectl
+    export PATH=$PATH:/usr/local/bin/kubectl
+    rm -rf kubectl kubectl.sha256
+
     cmd_check kubectl && echo "✅ Kubectl installed successfully: $(kubectl version --client)" || echo "Kubectl installation failed"
 }
 
@@ -73,7 +76,7 @@ ensure_kubectl(){
 ### --- Function to install Kind ---
 install_kind() {
     echo "⚡ Installing Kind..."
-    KIND_VERSION="v0.23.0"  # change if needed
+    KIND_VERSION="v0.30.0"  # change if needed
     curl -Lo ./kind "https://kind.sigs.k8s.io/dl/${KIND_VERSION}/kind-linux-amd64"
     chmod +x ./kind
     sudo mv ./kind /usr/local/bin/kind
@@ -92,7 +95,13 @@ ensure_kind(){
 
 install_helm(){
     echo "⚡ Installing Helm..."
-    sudo snap install helm --classic
+    # sudo snap install helm --classic
+    helm_version="v3.17.4"
+    tar_file="helm-${helm_version}-linux-amd64.tar.gz"
+    wget https://get.helm.sh/${tar_file}
+    tar -zxvf ${tar_file}
+    sudo mv linux-amd64/helm /usr/local/bin/helm
+    rm -rf ${tar_file} linux-amd64
     cmd_check helm && echo "✅ Helm installed successfully: $(helm version --short)" || echo "Helm installation failed"
 }
 
@@ -107,7 +116,13 @@ ensure_helm(){
 
 install_age(){
     echo "⚡ Installing Age..."
-    sudo apt install -y age
+    age_version="v1.2.1"
+    age_tar_file="age-${age_version}-linux-amd64.tar.gz"
+    curl -LO "https://github.com/FiloSottile/age/releases/latest/download/age-${age_version}-linux-amd64.tar.gz"
+    tar xf ${age_tar_file}
+    sudo mv age/age age/age-keygen /usr/local/bin
+    rm -rf age.tar.gz age ${age_tar_file}
+    # sudo apt install -y age
     cmd_check age && echo "✅ Age installed successfully: $(age --version)" || echo "Age installation failed"
 }
 
@@ -122,9 +137,12 @@ ensure_age(){
 
 install_sops(){
     echo "⚡ Installing SOPS..."
-    curl -LO https://github.com/getsops/sops/releases/download/v3.8.1/sops_3.8.1_amd64.deb
-    sudo dpkg -i sops_3.8.1_amd64.deb
-    rm -rf sops_3.8.1_amd64.deb
+    sops_version="v3.10.2"
+    sops_file="sops-${sops_version}.linux.amd64"
+    curl -LO "https://github.com/getsops/sops/releases/download/${sops_version}/${sops_file}"
+    chmod +x ${sops_file}
+    sudo mv ${sops_file} /usr/local/bin/sops
+    rm -rf ${sops_file}
     cmd_check sops && echo "✅ SOPS installed successfully: $(sops --version)" || echo "SOPS installation failed"
 }
 
@@ -153,12 +171,14 @@ setup_k8s_tools(){
 setup_pre_commit(){
     sudo apt install -y pre-commit
     pre-commit install
-    pre-commit run --all-file
 }
 
 setup(){
     echo "Setting up..."
+    sudo apt update -y
+    sudo apt install -y git wget nodejs npm
     require_pkgs
     setup_k8s_tools
+    secret_tool
     cmd_check pre-commit || setup_pre_commit
 }
