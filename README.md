@@ -12,6 +12,7 @@ The project is a small service with an API and worker, fully containerized and d
   - `/health` endpoint
   - `/metrics` Prometheus endpoint
   - `/tasks/{id}/run` enqueues background jobs
+  - `/kubectl/*` k8s endpoint, get cluster metrics
 - **Worker**: Python worker
   - Consumes jobs from RabbitMQ (Celery)
   - Simulates CPU/IO work
@@ -116,6 +117,15 @@ pre-commit run --all-files
 
 ---
 
+## Web Dashboard
+
+<div align="center" width="100%">
+  <img src="src/web_dashboard.png" width="800px" />
+  <br />K8s admin custom dashboard
+</div>
+
+--
+
 ## Observability
 
 - **Prometheus** scrapes API `/metrics` (http_server metrics + counters) and worker metrics (jobs processed, latency, cleanups).
@@ -160,4 +170,5 @@ make prune  # Clean docker
 ---
 
 ## License
-MIT
+
+This project is licensed under the MIT License.
