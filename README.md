@@ -124,7 +124,7 @@ pre-commit run --all-files
   <br />K8s admin custom dashboard
 </div>
 
---
+---
 
 ## Observability
 
