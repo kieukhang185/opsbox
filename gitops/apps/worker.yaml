@@ -1,17 +1,17 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: worker
+  name: opsbox-worker
   namespace: argocd
 spec:
   project: opsbox
   source:
     repoURL: https://github.com/kieukhang185/opsbox.git
     targetRevision: dev
-    path: ./ops/helm/worker
+    path: ops/helm/worker
     helm:
       valueFiles:
-        - ./ops/helm/worker/values.yaml
+        - values.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: dev

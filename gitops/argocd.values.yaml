@@ -12,3 +12,5 @@ configs:
     server.insecure: true
 dex:
   enabled: false
+crds:
+  install: true

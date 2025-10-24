@@ -1,17 +1,17 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: api
+  name: opsbox-api
   namespace: argocd
 spec:
   project: opsbox
   source:
     repoURL: https://github.com/kieukhang185/opsbox.git
     targetRevision: dev
-    path: ./ops/helm/api
+    path: ops/helm/api
     helm:
       valueFiles:
-        - ops/helm/api/values.yaml
+        - values.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: dev
