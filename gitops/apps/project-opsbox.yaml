@@ -1,0 +1,17 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: opsbox
+  namespace: argocd
+spec:
+  description: OpsBox dev project
+  sourceRepos:
+    - https://github.com/kieukhang185/opsbox.git
+  destinations:
+    - namespace: dev
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: "*"
+      kind: "*"
+  orphanedResources:
+    warn: true

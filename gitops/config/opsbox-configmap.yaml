@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: opsbox-parameters
+  namespace: dev
+data:
+  LOG_LEVEL: "info"
+  FEATURE_X_ENABLED: "false"

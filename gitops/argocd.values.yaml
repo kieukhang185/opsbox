@@ -1,0 +1,14 @@
+server:
+  extraArgs: ["--insecure"]
+  config:
+    repositories: |
+      - url: https://github.com/kieukhang185/opsbox.git
+        type: git
+        name: opsbox
+        sshPrivateKeySecret:
+          name: ""  # fill if you use SSH
+configs:
+  params:
+    server.insecure: true
+dex:
+  enabled: false
