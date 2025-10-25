@@ -11,7 +11,7 @@ spec:
     path: ops/helm/postgres
     helm:
       valueFiles:
-        - values.yaml
+        - ../../../gitops/values/postgres.values.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: dev

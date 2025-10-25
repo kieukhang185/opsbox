@@ -11,7 +11,7 @@ spec:
     path: ops/helm/worker
     helm:
       valueFiles:
-        - values.yaml
+        - ../../../gitops/values/worker.values.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: dev
