@@ -11,7 +11,7 @@ spec:
     path: ops/helm/api
     helm:
       valueFiles:
-        - values.yaml
+        - ../../../gitops/values/api.values.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: dev
