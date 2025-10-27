@@ -173,6 +173,24 @@ setup_pre_commit(){
     pre-commit install
 }
 
+install_argocd(){
+    echo "⚡ Installing ArgoCD CLI..."
+    version="v3.1.9"
+    curl -sSL -o argocd "https://github.com/argoproj/argo-cd/releases/download/${version}/argocd-linux-amd64"
+    chmod +x argocd
+    sudo mv argocd /usr/local/bin/
+    cmd_check argocd && echo "ArgoCD CLI installed successfully: $(argocd version)" || echo "ArgoCD CLI installation failed"
+}
+
+ensure_argocd(){
+    if cmd_check argocd
+    then
+        echo "✅ ArgoCD CLI present: $(argocd version)"
+    else
+        install_argocd
+    fi
+}
+
 setup(){
     echo "Setting up..."
     sudo apt update -y
