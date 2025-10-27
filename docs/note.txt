@@ -28,3 +28,6 @@ sudo dpkg -i sops_3.8.1_amd64.deb
 curl -O -L "https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64"
 sudo mv cosign-linux-amd64 /usr/local/bin/cosign
 sudo chmod +x /usr/local/bin/cosign
+
+# get argocd password
+kubectl -n argocd get secret argocd-initial-admin-secret -o go-template='{{.data.password | base64decode}}'; echo
