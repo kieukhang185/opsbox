@@ -35,8 +35,8 @@ ensure_namespace "${ARGOCD_NAMESPACE}"
 helm_repos "argo" "${ARGO_HELM_REPO}"
 helm_install "$ARGOCD_NAMESPACE"  "argo/argo-cd" "${ARGOCD_NAMESPACE}" "gitops/argocd.values.yaml"
 kubectl -n "${ARGOCD_NAMESPACE}" rollout status deploy/argocd-server
-# kubectl -n "${ARGOCD_NAMESPACE}" port-forward svc/argocd-server 8083:80 > /dev/null 2>&1 &
-# echo "Argo CD UI/API at http://localhost:8080"
+kubectl -n "${ARGOCD_NAMESPACE}" port-forward svc/argocd-server 8083:80 > /dev/null 2>&1 &
+echo "Argo CD UI/API at http://localhost:8080"
 
-# kubectl apply -n argocd -f gitops/apps/project-opsbox.yaml
-# kubectl apply -n argocd -f gitops/application.yaml
+kubectl apply -n argocd -f gitops/apps/project-opsbox.yaml
+kubectl apply -n argocd -f gitops/application.yaml

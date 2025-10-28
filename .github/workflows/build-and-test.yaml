@@ -7,6 +7,7 @@ on:
   push:
     branches:
       - main
+      - dev
   pull_request:
     branches:
       - main
@@ -15,6 +16,7 @@ on:
 env:
   REGISTRY: ghcr.io/${{ github.repository_owner }}
   SHA_TAG: ${{ github.sha }}
+  BRANCH: ${{ github.ref_name }}
   LATEST_TAG: latest
   NAMESPACE: dev
 
@@ -34,9 +36,9 @@ jobs:
         with:
           filters: |
             api:
-              - 'api/Dockerfile'
+              - 'api/*'
             worker:
-              - 'worker/Dockerfile'
+              - 'worker/**'
   build-push-api:
     needs: detect-changes
     if: needs.detect-changes.outputs.api-build == 'true'
@@ -60,24 +62,24 @@ jobs:
 
       - name: Build API
         run: |
-          docker build --tag ${{ env.REGISTRY }}/opsbox-api:${{ env.SHA_TAG }} \
-            --tag ${{ env.REGISTRY }}/opsbox-api:${{ env.LATEST_TAG }} --file api/Dockerfile .
+          docker build --tag ${{ env.REGISTRY }}/opsbox-api-${{ env.BRANCH }}:${{ env.SHA_TAG }} \
+            --tag ${{ env.REGISTRY }}/opsbox-api-${{ env.BRANCH }}:${{ env.LATEST_TAG }} --file api/Dockerfile .
 
       - name: Push API
         run: |
-          docker push ${{ env.REGISTRY }}/opsbox-api:${{ env.SHA_TAG }}
-          docker push ${{ env.REGISTRY }}/opsbox-api:${{ env.LATEST_TAG }}
+          docker push ${{ env.REGISTRY }}/opsbox-api-${{ env.BRANCH }}:${{ env.SHA_TAG }}
+          docker push ${{ env.REGISTRY }}/opsbox-api-${{ env.BRANCH }}:${{ env.LATEST_TAG }}
 
       - name: SBOM API
         uses: anchore/sbom-action@v0
         with:
-          image: ${{ env.REGISTRY }}/opsbox-api:${{ env.SHA_TAG }}
+          image: ${{ env.REGISTRY }}/opsbox-api-${{ env.BRANCH }}:${{ env.SHA_TAG }}
           artifact-name: sbom-api.spdx.json
 
       - name: Trivy scan API
         uses: aquasecurity/trivy-action@0.24.0
         with:
-          image-ref: ${{ env.REGISTRY }}/opsbox-api:${{ env.SHA_TAG }}
+          image-ref: ${{ env.REGISTRY }}/opsbox-api-${{ env.BRANCH }}:${{ env.SHA_TAG }}
           format: 'json'
           output: 'trivy-api-report.json'
           exit-code: '1'
@@ -106,24 +108,24 @@ jobs:
 
       - name: Build Worker
         run: |
-          docker build --tag ${{ env.REGISTRY }}/opsbox-worker:${{ env.SHA_TAG }} \
-            --tag ${{ env.REGISTRY }}/opsbox-worker:${{ env.LATEST_TAG }} --file worker/Dockerfile .
+          docker build --tag ${{ env.REGISTRY }}/opsbox-worker-${{ env.BRANCH }}:${{ env.SHA_TAG }} \
+            --tag ${{ env.REGISTRY }}/opsbox-worker-${{ env.BRANCH }}:${{ env.LATEST_TAG }} --file worker/Dockerfile .
 
       - name: Push Worker
         run: |
-          docker push ${{ env.REGISTRY }}/opsbox-worker:${{ env.SHA_TAG }}
-          docker push ${{ env.REGISTRY }}/opsbox-worker:${{ env.LATEST_TAG }}
+          docker push ${{ env.REGISTRY }}/opsbox-worker-${{ env.BRANCH }}:${{ env.SHA_TAG }}
+          docker push ${{ env.REGISTRY }}/opsbox-worker-${{ env.BRANCH }}:${{ env.LATEST_TAG }}
 
       - name: SBOM Worker
         uses: anchore/sbom-action@v0
         with:
-          image: ${{ env.REGISTRY }}/opsbox-worker:${{ env.SHA_TAG }}
+          image: ${{ env.REGISTRY }}/opsbox-worker-${{ env.BRANCH }}:${{ env.SHA_TAG }}
           artifact-name: sbom-worker.spdx.json
 
       - name: Trivy scan Worker
         uses: aquasecurity/trivy-action@0.24.0
         with:
-          image-ref: ${{ env.REGISTRY }}/opsbox-worker:${{ env.SHA_TAG }}
+          image-ref: ${{ env.REGISTRY }}/opsbox-worker-${{ env.BRANCH }}:${{ env.SHA_TAG }}
           format: 'json'
           output: 'trivy-worker-report.json'
           exit-code: '1'
@@ -131,10 +133,8 @@ jobs:
 
   deploy-and-test:
     needs: [build-push-api, build-push-worker, detect-changes]
-    if: needs.build-push-api.result == 'success'
-      && needs.build-push-worker.result == 'success'
-      || needs.detect-changes.outputs.api-build
-      == 'false' && needs.detect-changes.outputs.worker-build == 'false'
+    if: needs.build-push-api.result == 'success' && needs.build-push-worker.result == 'success'
+      || needs.build-push-api.result == 'skipped' && needs.build-push-worker.result == 'skipped'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -151,13 +151,13 @@ jobs:
         id: vars
         run: |
           # if not change image use latest tag
-          if [ "${{ needs.detect-changes.outputs.api-build }}" = "false" ]; then
+          if [ "${{ needs.detect-changes.outputs.api-build }}" == "false" ]; then
             echo "API not changed, using latest tag"
             echo "api-tag=latest" >> "$GITHUB_OUTPUT"
           else
             echo "api-tag=${{ github.sha }}" >> "$GITHUB_OUTPUT"
           fi
-          if [ "${{ needs.detect-changes.outputs.worker-build }}" = "false" ]; then
+          if [ "${{ needs.detect-changes.outputs.worker-build }}" == "false" ]; then
             echo "Worker not changed, using latest tag"
             echo "worker-tag=latest" >> "$GITHUB_OUTPUT"
           else
@@ -210,13 +210,13 @@ jobs:
       - name: Helm upgrade Worker
         run: |
           helm upgrade --install worker ops/helm/worker -n ${{ env.NAMESPACE }} \
-            --set image.repository=${{ env.REGISTRY }}/opsbox-worker \
+            --set image.repository=${{ env.REGISTRY }}/opsbox-worker-${{ env.BRANCH }} \
             --set image.tag=${{ steps.vars.outputs.worker-tag }}
 
       - name: Helm upgrade API
         run: |
           helm upgrade --install api ops/helm/api -n ${{ env.NAMESPACE }} \
-            --set image.repository=${{ env.REGISTRY }}/opsbox-api \
+            --set image.repository=${{ env.REGISTRY }}/opsbox-api-${{ env.BRANCH }} \
             --set image.tag=${{ steps.vars.outputs.api-tag }} \
             --set service.port=80 \
             --set containerPort=8000
