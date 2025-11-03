@@ -60,3 +60,12 @@ helm_install(){
     log_info "Installing helm chart ${chart_path} as release ${release_name}..."
     helm upgrade --install "${release_name}" "${chart_path}" --namespace "${namespace}" -f "${value_file}"
 }
+
+prometheus_alertmanager_setup(){
+    # alert secrets
+    kubectl -n monitoring create secret generic alertmanager-config \
+        --from-file=alertmanager.yaml="${WORKSPACE}/ops/observability/alertmanager.values.teams.yaml" \
+        --dry-run=client -o yaml | kubectl apply -f -
+    # restart alertmanager pods to pick up new config
+    kubectl -n monitoring delete pod -l app.kubernetes.io/name=alertmanager
+}

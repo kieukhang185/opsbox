@@ -31,6 +31,8 @@ install_docker() {
 
         sudo apt-get update -y
         sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin || true
+        sudo adduser "$USER" docker
+        newgrp docker
 
         cmd_check docker && echo "✅ Docker installed successfully: $(docker --version)" || echo "Docker installation failed"
     else
@@ -195,6 +197,7 @@ setup(){
     echo "Setting up..."
     sudo apt update -y
     sudo apt install -y git wget nodejs npm
+    pip install ruff
     require_pkgs
     setup_k8s_tools
     secret_tool

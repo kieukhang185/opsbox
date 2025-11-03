@@ -11,7 +11,7 @@ API_IMG="${API_IMG:-opsbox-api:dev}"
 WORKER_IMG="${WORKER_IMG:-opsbox-worker:dev}"
 BITNAMI_REPO="https://charts.bitnami.com/bitnami"
 PROM_REPO="https://prometheus-community.github.io/helm-charts"
-MONITORING_ENABLED=false
+MONITORING_ENABLED=true
 DEPLOY_ENV="local"
 ARGOCD_ENABLED="false"
 
@@ -24,9 +24,6 @@ while [[ $# -gt 0 ]]; do
         -env|--environment)
             DEPLOY_ENV="$2"
             shift 2 ;;
-        -m|--monitoring)
-            MONITORING_ENABLED=true
-            shift ;;
         -argocd|--argocd)
             ARGOCD_ENABLED="true"
             shift ;;
@@ -48,6 +45,8 @@ setup(){
 # shellcheck disable=SC1091
 source "${WORKSPACE}/ops/scripts/kubernetes_setup.sh"
 
+setup docker kind kubectl helm sops age
+
 create_kind_cluster "${KIND_CLUSTER_NAME}"
 
 ensure_namespace "${K8S_NAMESPACE}"
@@ -65,6 +64,13 @@ apply_app_secret(){
     sops -d ops/secrets/dev.app.enc.yaml | kubectl -n "${K8S_NAMESPACE}" apply -f -
 }
 
+install_monitoring(){
+    log_info "Installing monitoring stack..."
+    helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
+        --namespace "${MONITORING_NAMESPACE}" \
+        -f ops/observability/values.override.yaml
+}
+
 install_deps(){
     if [[ "${MONITORING_ENABLED}" == "true" ]]; then
         ensure_namespace "$MONITORING_NAMESPACE"
@@ -73,6 +79,7 @@ install_deps(){
     fi
 
     log_info "Installing Postgres and RabbitMQ..."
+    helm_repos "bitnami" "$BITNAMI_REPO"
     helm upgrade --install pg bitnami/postgresql -n dev -f ops/helm/postgres/values.dev.yaml
     helm upgrade --install rabbitmq bitnami/rabbitmq -n dev -f ops/helm/rabbitmq/values.dev.yaml
     kubectl -n "$K8S_NAMESPACE" rollout status statefulset/pg-postgresql --timeout=240s
@@ -103,15 +110,13 @@ argo_rollouts
 
 if [[ "${ARGOCD_ENABLED}" == "false" && "${DEPLOY_ENV}" == "local" ]]; then
     log_info "Deploying Helm charts locally..."
-    setup docker kind kubectl helm sops age
     bash "${WORKSPACE}/ops/scripts/deploy_helm_local.sh" \
         --api-image "${API_IMG}" \
         --k8s-namespace "${K8S_NAMESPACE}" \
         --kind-cluster-name "${KIND_CLUSTER_NAME}" \
-        --monitoring "${MONITORING_ENABLED}" \
         --worker-image "${WORKER_IMG}"
 else
     log_info "ArgoCD deployment enabled..."
-    setup kind kubectl helm argocd
+    setup argocd
     bash "${WORKSPACE}/ops/scripts/deploy_argocd.sh"
 fi

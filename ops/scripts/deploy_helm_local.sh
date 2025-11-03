@@ -15,8 +15,6 @@ API_IMG=""
 BITNAMI_REPO=""
 K8S_NAMESPACE=""
 KIND_CLUSTER_NAME=""
-MONITORING_ENABLED=""
-PROM_REPO=""
 WORKER_IMG=""
 
 while [[ $# -gt 0 ]]; do
@@ -30,9 +28,6 @@ while [[ $# -gt 0 ]]; do
         -c|--kind-cluster-name)
             kind_cluster_name="$2"
             shift 2 ;;
-        -m|--monitoring)
-            monitoring_enabled="$2"
-            shift 2 ;;
         -worker|--worker-image)
             worker_image="$2"
             shift 2 ;;
@@ -45,52 +40,8 @@ done
 API_IMG="${api_image}"
 K8S_NAMESPACE="${k8s_namespace}"
 KIND_CLUSTER_NAME="${kind_cluster_name}"
-MONITORING_ENABLED="${monitoring_enabled:-false}"
-MONITORING_NAMESPACE="monitoring"
 WORKER_IMG="${worker_image}"
-BITNAMI_REPO="https://charts.bitnami.com/bitnami"
-PROM_REPO="https://prometheus-community.github.io/helm-charts"
 
-
-install_monitoring(){
-    log_info "Installing monitoring stack..."
-    helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
-        --namespace "${MONITORING_NAMESPACE}" \
-        --set grafana.enabled=true \
-        --set grafana.service.type=ClusterIP \
-        --set prometheus.prometheusSpec.scrapeInterval="15s"
-}
-
-install_deps(){
-    if [[ "${MONITORING_ENABLED}" == "true" ]]; then
-        ensure_namespace "$MONITORING_NAMESPACE"
-        helm_repos "prometheus-community" "$PROM_REPO"
-        install_monitoring
-    fi
-
-    log_info "Installing Postgres and RabbitMQ..."
-    helm upgrade --install pg bitnami/postgresql -n dev -f ops/helm/postgres/values.dev.yaml
-    helm upgrade --install rabbitmq bitnami/rabbitmq -n dev -f ops/helm/rabbitmq/values.dev.yaml
-    kubectl -n "$K8S_NAMESPACE" rollout status statefulset/pg-postgresql --timeout=240s
-}
-
-apply_sa_dev(){
-  log_info "Applying service account..."
-  kubectl -n "${K8S_NAMESPACE}" apply -f "${WORKSPACE}/ops/scripts/templates/rbac-readonly.yaml"
-}
-
-argo_rollouts(){
-    kubectl get namespace argo-rollouts >/dev/null 2>&1 || kubectl create namespace argo-rollouts --dry-run=client -o yaml | kubectl apply -f -
-    log_info "Ensuring Argo Rollouts is installed..."
-    if ! kubectl -n argo-rollouts get deploy argo-rollouts-controller >/dev/null 2>&1; then
-        log_info "Installing Argo Rollouts..."
-        kubectl create ns argo-rollouts --dry-run=client -o yaml | kubectl apply -f -
-        kubectl -n argo-rollouts apply -f https://github.com/argoproj/argo-rollouts/releases/latest/download/install.yaml
-    else
-        log_info "Argo Rollouts already installed..."
-        return 0
-    fi
-}
 
 build_images(){
     log_info "Building Docker images..."
@@ -137,11 +88,6 @@ smoke_test(){
 main(){
     # shellcheck disable=SC1091
     source "${WORKSPACE}/ops/scripts/libs/common.sh"
-    source "${WORKSPACE}/ops/scripts/kubernetes_setup.sh"
-    helm_repos "bitnami" "$BITNAMI_REPO"
-    install_deps
-    apply_sa_dev
-    argo_rollouts
     build_images
     load_images_into_kind
     deploy_charts
