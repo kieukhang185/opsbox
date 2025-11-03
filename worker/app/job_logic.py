@@ -20,7 +20,7 @@ def run_task_imp(task_id: str) -> str:
         db.commit()
 
         time.sleep(random.uniform(0.5, 1.5))
-        if random.random() < 0.85:
+        if random.random() < 0.5:
             task.status = TaskStatus.SUCCEEDED
             task.result = f"Processed at {datetime.now(UTC).isoformat()}"
         else:
