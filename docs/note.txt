@@ -13,9 +13,13 @@ kubectl -n monitoring port-forward svc/monitoring-grafana 3000:80 &
 
 # grafana
 Login default: admin / prom-operator
+kubectl --namespace monitoring get secrets monitoring-grafana -o jsonpath="{.data.admin-password}" | base64 -d ; echo
+
+# check grafana dashboard
+kubectl logs -n monitoring deploy/monitoring-grafana -c grafana-sc-dashboard
 
 # forward api that deploy by argo rollout
-k -n dev port-forward svc/api 8000:80
+k -n dev port-forward svc/opsbox-api 8000:80
 
 # opsbox cli
 export PATH=$PATH://home/ubuntu/.local/bin
