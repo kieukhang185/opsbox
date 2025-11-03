@@ -16,9 +16,9 @@ build:
 	docker build -f worker/Dockerfile -t opsbox-worker:dev .
 
 deploy:
-	@echo "Deploy with monitoring? (y/N):" && read ans; \
+	@echo "Deploy with argocd? (y/N):" && read ans; \
 	if [ "$$ans" = "y" ] || [ "$$ans" = "Y" ] || [ "$$ans" = "yes" ] || [ "$$ans" = "YES" ]; then \
-		OPTION="--monitoring"; \
+		OPTION="--argocd"; \
 	else \
 		OPTION=""; \
 	fi; \
