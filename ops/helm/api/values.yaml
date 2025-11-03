@@ -164,7 +164,7 @@ config:
   databaseUrl: "postgresql+psycopg://postgres:postgres@pg-postgresql.dev.svc.cluster.local:5432/postgres"
 
 monitoring:
-  enabled: false # Set to true to create a ServiceMonitor resource
+  enabled: true # Set to true to create a ServiceMonitor resource
 
 envFrom:
   - secretRef:
