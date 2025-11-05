@@ -1,14 +1,8 @@
-FROM python:3.12-slim AS base
-
-ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+FROM hunterbxb/opsbox-base:1.0 AS base
 
 RUN useradd -m -u 10001 app
 
 WORKDIR /app
-
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl \
-    && rm -rf /var/lib/apt/lists/*
 
 COPY api/requirements.txt .
 

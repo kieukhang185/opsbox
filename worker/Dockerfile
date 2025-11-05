@@ -1,8 +1,6 @@
-FROM python:3.12-slim
+FROM hunterbxb/opsbox-base:1.0
 
-ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
-
-RUN useradd -m app
+RUN useradd -m -u 10001 app
 
 WORKDIR /app
 

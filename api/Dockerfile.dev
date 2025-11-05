@@ -1,4 +1,4 @@
-FROM python:3.12-slim AS base
+FROM hunterbxb/opsbox-base:1.0 AS base
 
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 
@@ -7,7 +7,7 @@ RUN useradd -m -u 10001 app
 WORKDIR /app
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl netcat-openbsd \
+    && apt-get install -y --no-install-recommends netcat-openbsd \
     && rm -rf /var/lib/apt/lists/*
 
 COPY api/requirements.txt .
