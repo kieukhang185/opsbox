@@ -12,7 +12,6 @@
 set -Eeuo pipefail
 
 API_IMG=""
-BITNAMI_REPO=""
 K8S_NAMESPACE=""
 KIND_CLUSTER_NAME=""
 WORKER_IMG=""
