@@ -7,10 +7,12 @@ export WORKSPACE="$(pwd)"
 KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-opsbox}"
 K8S_NAMESPACE="${K8S_NAMESPACE:-dev}"
 MONITORING_NAMESPACE="${MONITORING_NAMESPACE:-monitoring}"
+RABBIT_NS="${RABBIT_NS:-messaging}"
 API_IMG="${API_IMG:-opsbox-api:dev}"
 WORKER_IMG="${WORKER_IMG:-opsbox-worker:dev}"
 BITNAMI_REPO="https://charts.bitnami.com/bitnami"
 PROM_REPO="https://prometheus-community.github.io/helm-charts"
+PROM_RELEASE="monitoring"
 MONITORING_ENABLED=true
 DEPLOY_ENV="local"
 ARGOCD_ENABLED="false"
@@ -66,9 +68,11 @@ apply_app_secret(){
 
 install_monitoring(){
     log_info "Installing monitoring stack..."
-    helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
+    helm upgrade --install "${PROM_RELEASE}" prometheus-community/kube-prometheus-stack \
         --namespace "${MONITORING_NAMESPACE}" \
         -f ops/observability/values.override.yaml
+    kubectl -n "${MONITORING_NAMESPACE}" rollout status deploy/"${PROM_RELEASE}"-grafana --timeout=5m || true
+    kubectl -n "${MONITORING_NAMESPACE}" rollout status statefulset/"${PROM_RELEASE}"-prometheus --timeout=5m || true
 }
 
 install_deps(){
@@ -80,9 +84,12 @@ install_deps(){
 
     log_info "Installing Postgres and RabbitMQ..."
     helm_repos "bitnami" "$BITNAMI_REPO"
-    helm upgrade --install pg bitnami/postgresql -n dev -f ops/helm/postgres/values.dev.yaml
-    helm upgrade --install rabbitmq bitnami/rabbitmq -n dev -f ops/helm/rabbitmq/values.dev.yaml
-    kubectl -n "$K8S_NAMESPACE" rollout status statefulset/pg-postgresql --timeout=240s
+    helm upgrade --install pg bitnami/postgresql -n "$K8S_NAMESPACE" -f ops/helm/postgres/values.dev.yaml
+    helm upgrade --install rabbitmq bitnami/rabbitmq -n "$K8S_NAMESPACE" -f ops/helm/rabbitmq/values.dev.yaml
+    helm upgrade --install redis bitnami/redis -n "$K8S_NAMESPACE" -f ops/helm/redis/values.dev.yaml
+    kubectl -n "$K8S_NAMESPACE" rollout status statefulset/pg-postgresql --timeout=240s || true
+    kubectl -n "$K8S_NAMESPACE" rollout status statefulset/rabbitmq --timeout=240s || true
+    kubectl -n "$K8S_NAMESPACE" rollout status statefulset/redis-master --timeout=240s || true
 }
 
 apply_sa_dev(){

@@ -28,7 +28,7 @@ pushd "${WORKSPACE}" || exit 1
 
 
 delete_ns_object(){
-    local objects="api worker pg rabbitmq"
+    local objects="api worker pg rabbitmq redis"
     for obj in $objects; do
         log_warn "Deleted ${obj} helm release"
         helm uninstall "${obj}" -n "${K8S_NAMESPACE}" || true

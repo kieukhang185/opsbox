@@ -31,8 +31,7 @@ install_docker() {
 
         sudo apt-get update -y
         sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin || true
-        sudo adduser "$USER" docker
-        newgrp docker
+        eval "sudo adduser "$USER" docker && newgrp docker" | /bin/true
 
         cmd_check docker && echo "✅ Docker installed successfully: $(docker --version)" || echo "Docker installation failed"
     else
