@@ -40,8 +40,9 @@ while [[ $# -gt 0 ]]; do
 done
 
 setup(){
-  list_bins=$@
-  for bin in $list_bins; do need_install "$bin"; done
+    # shellcheck disable=SC2124
+    list_bins=$@
+    for bin in $list_bins; do need_install "$bin"; done
 }
 
 # shellcheck disable=SC1091

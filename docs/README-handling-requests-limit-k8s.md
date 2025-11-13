@@ -1,6 +1,6 @@
 # 🧠 Handling Resource Requests & Limits in Kubernetes
 
-This guide explains how to **measure**, **set**, and **tune** CPU and Memory resources for real applications running on Kubernetes.  
+This guide explains how to **measure**, **set**, and **tune** CPU and Memory resources for real applications running on Kubernetes.
 It is designed for DevOps engineers who want to ensure performance, stability, and cost efficiency.
 
 ---
@@ -154,12 +154,12 @@ Access dashboard → see which deployments are over- or under-provisioned.
 ---
 
 ## 🧠 5. Best Practices
-✅ Always define both **requests** and **limits**  
-✅ Start low, measure, then tune upward  
-✅ Keep a **10–30% buffer** for bursts  
-✅ Separate **staging vs production** sizing  
-✅ Review resource configs every 2–4 weeks  
-✅ Use dashboards and alerts for anomalies  
+✅ Always define both **requests** and **limits**
+✅ Start low, measure, then tune upward
+✅ Keep a **10–30% buffer** for bursts
+✅ Separate **staging vs production** sizing
+✅ Review resource configs every 2–4 weeks
+✅ Use dashboards and alerts for anomalies
 
 ---
 
@@ -173,6 +173,6 @@ Access dashboard → see which deployments are over- or under-provisioned.
 ---
 
 ## 📁 7. Deliverables
-- Resource tuning dashboard in Grafana  
-- Sizing runbook (`runbook/sizing.md`)  
-- Load test results and tuning notes  
+- Resource tuning dashboard in Grafana
+- Sizing runbook (`runbook/sizing.md`)
+- Load test results and tuning notes
