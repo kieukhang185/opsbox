@@ -5,11 +5,11 @@ from .settings import (
     BROKER_URL,
     CELERY_CONCURRENCY,
     CELERY_QUEUE,
+    CELERY_RESULT_BACKEND,
     CELERY_RESULT_TTL,
     CELERY_TIMEZONE,
     DATABASE_URL,
     QUEUE_NAME,
-    RESULT_BACKEND,
 )
 
 __all__ = [
@@ -23,7 +23,7 @@ __all__ = [
     "CELERY_CONCURRENCY",
     "BROKER_URL",
     "DATABASE_URL",
-    "RESULT_BACKEND",
+    "CELERY_RESULT_BACKEND",
     "SessionLocal",
     "get_db",
     "init_db",

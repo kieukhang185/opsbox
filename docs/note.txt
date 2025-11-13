@@ -18,6 +18,12 @@ kubectl --namespace monitoring get secrets monitoring-grafana -o jsonpath="{.dat
 # check grafana dashboard
 kubectl logs -n monitoring deploy/monitoring-grafana -c grafana-sc-dashboard
 
+# RabbitMQ Management UI
+kubectl -n dev port-forward svc/rabbitmq 15672:15672
+
+# Redis
+kubectl -n dev get secret redis -o jsonpath='{.data.redis-password}' | base64 -d
+
 # forward api that deploy by argo rollout
 k -n dev port-forward svc/opsbox-api 8000:80
 

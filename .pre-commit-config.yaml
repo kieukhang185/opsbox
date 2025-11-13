@@ -57,7 +57,7 @@ repos:
     rev: v0.11.0
     hooks:
       - id: shellcheck
-        files: ^scripts/shell-scripts/.*\.sh$
+        files: ^ops/scripts/.*\.sh$
         args: [--severity=warning, --external-sources]
 
   # Dockerfiles

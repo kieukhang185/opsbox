@@ -8,8 +8,8 @@ from opsbox_common.settings import CELERY_QUEUE
 from .metrics import JOB_LATENCY, JOBS, start_metrics_server
 
 BROKER_URL = os.getenv("BROKER_URL")
-RESULT_BACKEND = os.getenv("RESULT_BACKEND")
-celery_app = Celery("opsbox", broker=BROKER_URL, backend=RESULT_BACKEND)
+CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND")
+celery_app = Celery("opsbox", broker=BROKER_URL, backend=CELERY_RESULT_BACKEND)
 celery_app.conf.task_default_queue = os.getenv("CELERY_QUEUE", "tasks")
 
 celery_app = make_celery("opsbox")
