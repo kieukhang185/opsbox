@@ -269,6 +269,7 @@ jobs:
           echo "--- Events"
           kubectl -n ${{ env.NAMESPACE }} get events --sort-by=.lastTimestamp | tail -n 200 || true
           echo "--- Logs API"
-          kubectl -n ${{ env.NAMESPACE }} logs deploy/opsbox-api --all-containers --tail=200 || true
+          POD_NAME=$(kubectl get pods --namespace dev -l "app.kubernetes.io/name=api,app.kubernetes.io/instance=api" -o jsonpath="{.items[0].metadata.name}")
+          kubectl -n ${{ env.NAMESPACE }} logs $POD_NAME --all-containers --tail=200 || true
           echo "--- Logs Worker"
           kubectl -n ${{ env.NAMESPACE }} logs deploy/opsbox-worker --all-containers --tail=200 || true
