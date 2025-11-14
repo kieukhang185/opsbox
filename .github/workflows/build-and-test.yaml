@@ -253,9 +253,9 @@ jobs:
 
       - name: Wait for deployments
         run: |
-          kubectl -n ${{ env.NAMESPACE }} rollout status deploy/opsbox-api --timeout=240s || true
+          # kubectl -n ${{ env.NAMESPACE }} rollout status deploy/opsbox-api --timeout=240s || true
           kubectl -n ${{ env.NAMESPACE }} rollout status deploy/opsbox-worker --timeout=240s || true
-          kubectl -n ${{ env.NAMESPACE }} port-forward svc/opsbox-api 8080:80 >/tmp/pf.log 2>&1 &
+          kubectl -n ${{ env.NAMESPACE }} port-forward svc/api 8080:80 >/tmp/pf.log 2>&1 &
 
       - name: Run Helm smoke tests
         run: |
