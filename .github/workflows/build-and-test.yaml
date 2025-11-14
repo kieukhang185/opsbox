@@ -137,7 +137,7 @@ jobs:
 
   deploy-and-test:
     needs: [build-push-api, build-push-worker, detect-changes]
-    if: $ {{ (needs.build-push-api.result == 'success' || needs.build-push-worker.result == 'skipped')
+    if: ${{ (needs.build-push-api.result == 'success' || needs.build-push-worker.result == 'skipped')
       && (needs.build-push-api.result == 'success' || needs.build-push-worker.result == 'skipped')}}
     runs-on: ubuntu-24.04
     steps:
