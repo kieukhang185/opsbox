@@ -253,9 +253,9 @@ jobs:
 
       - name: Wait for deployments
         run: |
-          kubectl -n ${{ env.NAMESPACE }} rollout status deploy/api --timeout=240s || true
-          kubectl -n ${{ env.NAMESPACE }} rollout status deploy/worker --timeout=240s || true
-          kubectl -n ${{ env.NAMESPACE }} port-forward svc/api 8080:80 >/tmp/pf.log 2>&1 &
+          kubectl -n ${{ env.NAMESPACE }} rollout status deploy/opsbox-api --timeout=240s || true
+          kubectl -n ${{ env.NAMESPACE }} rollout status deploy/opsbox-worker --timeout=240s || true
+          kubectl -n ${{ env.NAMESPACE }} port-forward svc/opsbox-api 8080:80 >/tmp/pf.log 2>&1 &
 
       - name: Run Helm smoke tests
         run: |
@@ -269,6 +269,6 @@ jobs:
           echo "--- Events"
           kubectl -n ${{ env.NAMESPACE }} get events --sort-by=.lastTimestamp | tail -n 200 || true
           echo "--- Logs API"
-          kubectl -n ${{ env.NAMESPACE }} logs deploy/api --all-containers --tail=200 || true
+          kubectl -n ${{ env.NAMESPACE }} logs deploy/opsbox-api --all-containers --tail=200 || true
           echo "--- Logs Worker"
-          kubectl -n ${{ env.NAMESPACE }} logs deploy/worker --all-containers --tail=200 || true
+          kubectl -n ${{ env.NAMESPACE }} logs deploy/opsbox-worker --all-containers --tail=200 || true
