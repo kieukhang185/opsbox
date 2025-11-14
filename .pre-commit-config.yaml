@@ -40,7 +40,7 @@ repos:
     hooks:
       - id: ruff-check
         name: ruff (focused rules)
-        files: ^(api/|worker/|tests)/
+        files: ^(api/|worker/|tests/|shared/)/
         args:
           - --select=F,E,I,UP,PERF  # example narrow set; tune to avoid overlap
           - --ignore=E501
