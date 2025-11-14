@@ -17,7 +17,7 @@ env:
   REGISTRY: ghcr.io/${{ github.repository_owner }}
   SHA_TAG: ${{ github.sha }}
   BRANCH: ${{ github.ref_name }}
-  IMAGE_PREFIX: ${{ env.BRANCH == 'main' && '' || 'dev' }}
+  IMAGE_PREFIX: ${{ github.ref_name == 'main' && '' || 'dev' }} # not supported env.BRANCH var conditionals
   LATEST_TAG: latest
   NAMESPACE: dev
   PROM_RELEASE: monitoring
