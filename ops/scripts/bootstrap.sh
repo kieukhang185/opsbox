@@ -6,13 +6,11 @@ export WORKSPACE="$(pwd)"
 
 KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-opsbox}"
 K8S_NAMESPACE="${K8S_NAMESPACE:-dev}"
-MONITORING_NAMESPACE="${MONITORING_NAMESPACE:-monitoring}"
-RABBIT_NS="${RABBIT_NS:-messaging}"
+PROM_RELEASE="${PROM_RELEASE:-monitoring}"
 API_IMG="${API_IMG:-opsbox-api:dev}"
 WORKER_IMG="${WORKER_IMG:-opsbox-worker:dev}"
 BITNAMI_REPO="https://charts.bitnami.com/bitnami"
 PROM_REPO="https://prometheus-community.github.io/helm-charts"
-PROM_RELEASE="monitoring"
 MONITORING_ENABLED=true
 DEPLOY_ENV="local"
 ARGOCD_ENABLED="false"
@@ -70,15 +68,15 @@ apply_app_secret(){
 install_monitoring(){
     log_info "Installing monitoring stack..."
     helm upgrade --install "${PROM_RELEASE}" prometheus-community/kube-prometheus-stack \
-        --namespace "${MONITORING_NAMESPACE}" \
+        --namespace "${PROM_RELEASE}" \
         -f ops/observability/values.override.yaml
-    kubectl -n "${MONITORING_NAMESPACE}" rollout status deploy/"${PROM_RELEASE}"-grafana --timeout=5m || true
-    kubectl -n "${MONITORING_NAMESPACE}" rollout status statefulset/"${PROM_RELEASE}"-prometheus --timeout=5m || true
+    kubectl -n "${PROM_RELEASE}" rollout status deploy/"${PROM_RELEASE}"-grafana --timeout=5m || true
+    kubectl -n "${PROM_RELEASE}" rollout status statefulset/"${PROM_RELEASE}"-prometheus --timeout=5m || true
 }
 
 install_deps(){
     if [[ "${MONITORING_ENABLED}" == "true" ]]; then
-        ensure_namespace "$MONITORING_NAMESPACE"
+        ensure_namespace "$PROM_RELEASE"
         helm_repos "prometheus-community" "$PROM_REPO"
         install_monitoring
     fi
