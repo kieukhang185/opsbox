@@ -3,6 +3,8 @@ architecture: standalone # for dev
 auth:
   enabled: true
   password: "opsbox-redis"       # store in sops for prod
+  # redis://:${password}@redis-master.dev.svc.cluster.local:6379/0
+  # redis://:opsbox-redis@redis-master.dev.svc.cluster.local:6379/0
 
 master:
   persistence:
