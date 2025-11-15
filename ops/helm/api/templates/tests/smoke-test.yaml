@@ -94,7 +94,7 @@ spec:
           run_url = base + (run_tpl % task_id)
           print("==> POST", run_url)
           try:
-              code, txt = call(run_url, "POST", data=b"{}", headers=headers)
+              code, txt = call(run_url, "POST", data=b"{}", headers=headers, tries=3, sleep=5)
               print("Run HTTP", code); print(txt)
           except Exception as e:
               print("Run failed:", e); sys.exit(1)

@@ -17,4 +17,59 @@ spec:
       annotations:
         summary: "Worker jobs failing"
         description: "One or more jobs failed in the last 5 minutes."
+    - alert: OpsboxWorkerMemoryHigh
+      expr: |
+        (
+          sum by (namespace,pod) (
+            container_memory_working_set_bytes{
+              namespace="dev",
+              pod=~"opsbox-worker.*",
+              container!="", image!=""
+            }
+          )
+        /
+          sum by (namespace,pod) (
+            kube_pod_container_resource_limits{
+              namespace="dev",
+              resource="memory",
+              unit="byte",
+              pod=~"opsbox-worker.*"
+            }
+          )
+        ) * 100 > 90
+      for: 5m
+      labels:
+        severity: warning
+        service: opsbox-worker
+      annotations:
+        summary: "Worker memory usage > 90% of limit"
+        description: "Pod {{`{{ $labels.pod }}`}} in {{`{{ $labels.namespace }}`}} is using >90% of its memory limit."
+
+    - alert: OpsboxWorkerMemoryCritical
+      expr: |
+        (
+          sum by (namespace,pod) (
+            container_memory_working_set_bytes{
+              namespace="dev",
+              pod=~"opsbox-worker.*",
+              container!="", image!=""
+            }
+          )
+        /
+          sum by (namespace,pod) (
+            kube_pod_container_resource_limits{
+              namespace="dev",
+              resource="memory",
+              unit="byte",
+              pod=~"opsbox-worker.*"
+            }
+          )
+        ) * 100 > 98
+      for: 2m
+      labels:
+        severity: critical
+        service: opsbox-worker
+      annotations:
+        summary: "Worker memory usage > 98% of limit"
+        description: "Pod {{`{{ $labels.pod }}`}} is nearly out of memory (working_set vs limit)."
 {{- end }}

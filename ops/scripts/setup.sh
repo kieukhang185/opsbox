@@ -31,6 +31,7 @@ install_docker() {
 
         sudo apt-get update -y
         sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin || true
+        eval "sudo adduser '${USER}' docker && newgrp docker" | /bin/true
 
         cmd_check docker && echo "✅ Docker installed successfully: $(docker --version)" || echo "Docker installation failed"
     else
@@ -173,10 +174,29 @@ setup_pre_commit(){
     pre-commit install
 }
 
+install_argocd(){
+    echo "⚡ Installing ArgoCD CLI..."
+    version="v3.1.9"
+    curl -sSL -o argocd "https://github.com/argoproj/argo-cd/releases/download/${version}/argocd-linux-amd64"
+    chmod +x argocd
+    sudo mv argocd /usr/local/bin/
+    cmd_check argocd && echo "ArgoCD CLI installed successfully: $(argocd version)" || echo "ArgoCD CLI installation failed"
+}
+
+ensure_argocd(){
+    if cmd_check argocd
+    then
+        echo "✅ ArgoCD CLI present: $(argocd version)"
+    else
+        install_argocd
+    fi
+}
+
 setup(){
     echo "Setting up..."
     sudo apt update -y
     sudo apt install -y git wget nodejs npm
+    pip install ruff
     require_pkgs
     setup_k8s_tools
     secret_tool

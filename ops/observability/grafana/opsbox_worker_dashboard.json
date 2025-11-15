@@ -3,37 +3,264 @@
   "timezone": "browser",
   "schemaVersion": 39,
   "version": 1,
+  "refresh": "30s",
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "type": "datasource",
+        "query": "prometheus",
+        "refresh": 1,
+        "hide": 0,
+        "current": {
+          "text": "prometheus",
+          "value": "prometheus"
+        }
+      },
+      {
+        "name": "namespace",
+        "type": "query",
+        "label": "Namespace",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "$datasource"
+        },
+        "query": "label_values(kube_pod_info, namespace)",
+        "refresh": 1,
+        "hide": 0,
+        "current": {
+          "text": "dev",
+          "value": "dev"
+        }
+      },
+      {
+        "name": "pod_prefix",
+        "type": "constant",
+        "label": "Pod prefix",
+        "query": "opsbox-worker",
+        "hide": 0
+      }
+    ]
+  },
   "panels": [
     {
       "type": "stat",
       "title": "Jobs succeeded (5m)",
+      "id": 1,
       "gridPos": {"x": 0, "y": 0, "w": 4, "h": 4},
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$datasource"
+      },
       "targets": [
-        {"expr": "increase(worker_jobs_total{result=\"SUCCEEDED\"}[5m])"}
-      ]
+        {
+          "expr": "increase(worker_jobs_total{result=\"SUCCEEDED\"}[5m])",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      }
     },
     {
       "type": "stat",
       "title": "Jobs failed (5m)",
+      "id": 2,
       "gridPos": {"x": 4, "y": 0, "w": 4, "h": 4},
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$datasource"
+      },
       "targets": [
-        {"expr": "increase(worker_jobs_total{result=\"FAILED\"}[5m])"}
-      ]
+        {
+          "expr": "increase(worker_jobs_total{result=\"FAILED\"}[5m])",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "orange",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 5
+              }
+            ]
+          }
+        }
+      }
     },
     {
       "type": "stat",
       "title": "Cleanup deleted (5m)",
+      "id": 3,
       "gridPos": {"x": 8, "y": 0, "w": 4, "h": 4},
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$datasource"
+      },
       "targets": [
-        {"expr": "increase(worker_cleanups_total[5m])"}
-      ]
+        {
+          "expr": "increase(worker_cleanups_total[5m])",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      }
     },
     {
       "type": "timeseries",
       "title": "Job latency p95 (s)",
+      "id": 4,
       "gridPos": {"x": 0, "y": 4, "w": 12, "h": 6},
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$datasource"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      },
       "targets": [
-        {"expr": "histogram_quantile(0.95, sum by (le) (rate(worker_job_latency_seconds_bucket[5m])))", "legendFormat": "p95"}
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(worker_job_latency_seconds_bucket[5m])))",
+          "legendFormat": "p95",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Memory (MiB) by pod",
+      "id": 5,
+      "gridPos": {"x": 0, "y": 10, "w": 12, "h": 7},
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$datasource"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "mibytes"
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum by (pod) (container_memory_working_set_bytes{namespace=\"$namespace\", pod=~\"$pod_prefix.*\", container!=\"\", image!=\"\"}) / 1024 / 1024",
+          "legendFormat": "{{pod}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Memory % of limit",
+      "id": 6,
+      "gridPos": {"x": 12, "y": 10, "w": 12, "h": 7},
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$datasource"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent"
+        }
+      },
+      "targets": [
+        {
+          "expr": "(\n  sum by (pod) (container_memory_working_set_bytes{namespace=\"$namespace\", pod=~\"$pod_prefix.*\", container!=\"\", image!=\"\"})\n/\n  sum by (pod) (kube_pod_container_resource_limits{namespace=\"$namespace\", resource=\"memory\", unit=\"byte\", pod=~\"$pod_prefix.*\"})\n) * 100",
+          "legendFormat": "{{pod}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "CPU cores (usage) by pod",
+      "id": 7,
+      "gridPos": {"x": 0, "y": 17, "w": 12, "h": 7},
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$datasource"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "cores"
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"$namespace\", pod=~\"$pod_prefix.*\", container!=\"\", image!=\"\"}[5m]))",
+          "legendFormat": "{{pod}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "CPU % of request",
+      "id": 8,
+      "gridPos": {"x": 12, "y": 17, "w": 12, "h": 7},
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$datasource"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent"
+        }
+      },
+      "targets": [
+        {
+          "expr": "(\n  sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"$namespace\", pod=~\"$pod_prefix.*\", container!=\"\", image!=\"\"}[5m]))\n/\n  sum by (pod) (kube_pod_container_resource_requests{namespace=\"$namespace\", resource=\"cpu\", unit=\"core\", pod=~\"$pod_prefix.*\"})\n) * 100",
+          "legendFormat": "{{pod}}",
+          "refId": "A"
+        }
       ]
     }
   ]

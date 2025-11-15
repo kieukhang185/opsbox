@@ -1,0 +1,347 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": false,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "panels": [],
+      "title": "Overview",
+      "type": "row"
+    },
+    {
+      "type": "stat",
+      "title": "Connections",
+      "id": 2,
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 1
+      },
+      "datasource": "${DS_PROM}",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rabbitmq_connections)"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "orientation": "auto"
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Channels",
+      "id": 3,
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 1
+      },
+      "datasource": "${DS_PROM}",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rabbitmq_channels)"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Queues",
+      "id": 4,
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 1
+      },
+      "datasource": "${DS_PROM}",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "count(rabbitmq_queue_messages_ready)"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Consumers",
+      "id": 5,
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 1
+      },
+      "datasource": "${DS_PROM}",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rabbitmq_queue_consumers)"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "id": 6,
+      "panels": [],
+      "title": "Message Rates",
+      "type": "row"
+    },
+    {
+      "type": "timeseries",
+      "title": "Messages Ready vs Unacked",
+      "id": 7,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 6
+      },
+      "datasource": "${DS_PROM}",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rabbitmq_queue_messages_ready)"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(rabbitmq_queue_messages_unacked)"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Publish / Deliver / Ack (rate)",
+      "id": 8,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 6
+      },
+      "datasource": "${DS_PROM}",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(rabbitmq_messages_published_total[5m]))"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(rate(rabbitmq_messages_delivered_total[5m]))"
+        },
+        {
+          "refId": "C",
+          "expr": "sum(rate(rabbitmq_messages_acked_total[5m]))"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 14
+      },
+      "id": 9,
+      "panels": [],
+      "title": "Per-Queue",
+      "type": "row"
+    },
+    {
+      "type": "table",
+      "title": "Top 10 Queues by Messages Ready",
+      "id": 10,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 15
+      },
+      "datasource": "${DS_PROM}",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(10, sum by (queue) (rabbitmq_queue_messages_ready))"
+        }
+      ],
+      "options": {
+        "showHeader": true
+      }
+    },
+    {
+      "type": "table",
+      "title": "Top 10 Queues by Unacked",
+      "id": 11,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 15
+      },
+      "datasource": "${DS_PROM}",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(10, sum by (queue) (rabbitmq_queue_messages_unacked))"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 23
+      },
+      "id": 12,
+      "panels": [],
+      "title": "Broker Resources",
+      "type": "row"
+    },
+    {
+      "type": "timeseries",
+      "title": "Memory Used",
+      "id": 13,
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 24
+      },
+      "datasource": "${DS_PROM}",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rabbitmq_mem_used)"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Disk Free",
+      "id": 14,
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 8,
+        "y": 24
+      },
+      "datasource": "${DS_PROM}",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rabbitmq_disk_free)"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Erlang Processes Used",
+      "id": 15,
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 16,
+        "y": 24
+      },
+      "datasource": "${DS_PROM}",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rabbitmq_erlang_processes)"
+        }
+      ]
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 36,
+  "style": "dark",
+  "tags": [
+    "rabbitmq",
+    "opsbox"
+  ],
+  "templating": {
+    "list": [
+      {
+        "hide": 0,
+        "label": "Datasource",
+        "name": "DS_PROM",
+        "query": "prometheus",
+        "refresh": 1,
+        "type": "datasource"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timezone": "browser",
+  "title": "RabbitMQ - OpsBox",
+  "uid": "opsbox-rmq",
+  "version": 1
+}

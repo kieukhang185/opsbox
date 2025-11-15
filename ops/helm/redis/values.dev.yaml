@@ -1,7 +1,10 @@
-architecture: standalone
+architecture: standalone # for dev
 
 auth:
-  enabled: false   # dev only; turn on in prod/staging
+  enabled: true
+  password: "opsbox-redis"       # store in sops for prod
+  # redis://:${password}@redis-master.dev.svc.cluster.local:6379/0
+  # redis://:opsbox-redis@redis-master.dev.svc.cluster.local:6379/0
 
 master:
   persistence:
@@ -9,12 +12,43 @@ master:
   resources:
     requests:
       cpu: 50m
-      memory: 64Mi
+      memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  configmap: ""
+  extraFlags:
+    - "--appendonly yes"
+    - "--maxmemory 256mb"
+    - "--maxmemory-policy allkeys-lru"
 
 replica:
-  replicaCount: 0
+  replicaCount: 1
+  persistence:
+    enabled: false
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+    limits:   { cpu: 100m, memory: 256Mi }
 
+# Inline redis.conf
+redisConfiguration:
+  # suggests sensible dev defaults; override as you like
+  appendonly: "yes"
+  save: "900 1 300 10 60 10000"
+  maxmemory: "256mb"
+  maxmemory-policy: "allkeys-lru"
+  tcp-keepalive: "300"
+  timeout: "0"
+
+# Exporter + ServiceMonitor
 metrics:
   enabled: true
   serviceMonitor:
-    enabled: false
+    enabled: true
+    namespace: monitoring
+    interval: 15s
+    labels:
+      release: monitoring
+
+networkPolicy:
+  enabled: false

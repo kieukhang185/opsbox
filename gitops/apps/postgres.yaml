@@ -1,0 +1,19 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: opsbox-postgres
+  namespace: argocd
+spec:
+  project: opsbox
+  source:
+    repoURL: https://github.com/kieukhang185/opsbox.git
+    targetRevision: dev
+    path: ops/helm/postgres
+    helm:
+      valueFiles:
+        - ../../../gitops/values/postgres.values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: dev
+  syncPolicy:
+    automated: {}

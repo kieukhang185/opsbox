@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: opsbox-root
+  namespace: argocd
+spec:
+  project: opsbox
+  source:
+    repoURL: https://github.com/kieukhang185/opsbox.git
+    targetRevision: dev
+    path: gitops/apps
+    directory:
+      recurse: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

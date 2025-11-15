@@ -19,6 +19,8 @@ export WORKSPACE="$(pwd)"
 KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-opsbox}"
 K8S_NAMESPACE="${K8S_NAMESPACE:-dev}"
 MONITORING_NAMESPACE="${MONITORING_NAMESPACE:-monitoring}"
+ARGOCD_NAMESPACE="${ARGOCD_NAMESPACE:-argocd}"
+ARGO_ROLLOUT_NAMESPACE="${ARGO_ROLLOUT_NAMESPACE:-argo-rollouts}"
 
 # shellcheck disable=SC1091
 source "${WORKSPACE}/ops/scripts/libs/common.sh"
@@ -26,16 +28,18 @@ pushd "${WORKSPACE}" || exit 1
 
 
 delete_ns_object(){
-    local objects="api worker pg rabbitmq"
+    local objects="api worker pg rabbitmq redis"
     for obj in $objects; do
         log_warn "Deleted ${obj} helm release"
         helm uninstall "${obj}" -n "${K8S_NAMESPACE}" || true
     done
     kubectl -n "${K8S_NAMESPACE}" delete secret opxsbox-secret --ignore-not-found
-    kubectl -n "$K8S_NAMESPACE" delete job opsbox-smoke --ignore-not-found
+    kubectl -n "${K8S_NAMESPACE}" delete job opsbox-smoke --ignore-not-found
 
-    kubectl delete ns "$K8S_NAMESPACE" --ignore-not-found
-    kubectl delete ns "$MONITORING_NAMESPACE" --ignore-not-found
+    kubectl delete ns "${K8S_NAMESPACE}" --ignore-not-found
+    kubectl delete ns "${MONITORING_NAMESPACE}" --ignore-not-found
+    kubectl delete ns "${ARGOCD_NAMESPACE}" --ignore-not-found
+    kubectl delete ns "${ARGO_ROLLOUT_NAMESPACE}" --ignore-not-found
 }
 
 

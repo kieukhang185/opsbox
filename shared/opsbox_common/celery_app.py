@@ -1,11 +1,11 @@
 # shared/opsbox_common/celery_app.py
 from celery import Celery
 
-from .settings import BROKER_URL, CELERY_RESULT_TTL, CELERY_TIMEZONE, RESULT_BACKEND
+from .settings import BROKER_URL, CELERY_RESULT_BACKEND, CELERY_RESULT_TTL, CELERY_TIMEZONE
 
 
 def make_celery(app_name: str = "opsbox") -> Celery:
-    c = Celery(app_name, broker=BROKER_URL, backend=RESULT_BACKEND)
+    c = Celery(app_name, broker=BROKER_URL, backend=CELERY_RESULT_BACKEND)
     c.conf.update(
         task_serializer="json",
         accept_content=["json"],

@@ -17,7 +17,8 @@ def run_task(task_id: str) -> str:
     label = "FAILED"
     try:
         out = run_task_imp(task_id)
-        label = "SUCCEEDED"
+        if out != "simulated failure":
+            label = "SUCCEEDED"
         return out
     finally:
         JOB_LATENCY.observe(time.perf_counter() - t0)

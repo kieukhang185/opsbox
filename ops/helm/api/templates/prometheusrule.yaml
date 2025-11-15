@@ -20,4 +20,58 @@ spec:
       annotations:
         summary: "API error rate >5% (5m)"
         description: "High error ratio over the last 5 minutes."
+    - alert: OpsboxApiMemoryHigh
+      expr: |
+        (
+          sum by (namespace,pod) (
+            container_memory_working_set_bytes{
+              namespace="dev",
+              pod=~"opsbox-api.*",
+              container!="", image!=""
+            }
+          )
+        /
+          sum by (namespace,pod) (
+            kube_pod_container_resource_limits{
+              namespace="dev",
+              resource="memory",
+              unit="byte",
+              pod=~"opsbox-api.*"
+            }
+          )
+        ) * 100 > 90
+      for: 5m
+      labels:
+        severity: warning
+        service: opsbox-api
+      annotations:
+        summary: "API memory usage > 90% of limit for 5m"
+        description: "Pod {{`{{ $labels.pod }}`}} in {{`{{ $labels.namespace }}`}} is using >90% of its memory limit."
+    - alert: OpsboxApiMemoryCritical
+      expr: |
+        (
+          sum by (namespace,pod) (
+            container_memory_working_set_bytes{
+              namespace="dev",
+              pod=~"opsbox-api.*",
+              container!="", image!=""
+            }
+          )
+        /
+          sum by (namespace,pod) (
+            kube_pod_container_resource_limits{
+              namespace="dev",
+              resource="memory",
+              unit="byte",
+              pod=~"opsbox-api.*"
+            }
+          )
+        ) * 100 > 98
+      for: 2m
+      labels:
+        severity: critical
+        service: opsbox-api
+      annotations:
+        summary: "API memory usage > 98% of limit"
+        description: "Pod {{`{{ $labels.pod }}`}} is nearly out of memory (working_set vs limit)."
 {{- end }}

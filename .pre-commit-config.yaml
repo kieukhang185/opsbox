@@ -40,7 +40,7 @@ repos:
     hooks:
       - id: ruff-check
         name: ruff (focused rules)
-        files: ^(api/|worker/|tests)/
+        files: ^(api/|worker/|tests/|shared/)/
         args:
           - --select=F,E,I,UP,PERF  # example narrow set; tune to avoid overlap
           - --ignore=E501
@@ -57,7 +57,7 @@ repos:
     rev: v0.11.0
     hooks:
       - id: shellcheck
-        files: ^scripts/shell-scripts/.*\.sh$
+        files: ^ops/scripts/.*\.sh$
         args: [--severity=warning, --external-sources]
 
   # Dockerfiles

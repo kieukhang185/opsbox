@@ -1,0 +1,885 @@
+# Install the chart into the "monitoring" namespace:
+# helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack -n monitoring
+
+prometheus:
+  prometheusSpec:
+    scrapeInterval: 15s
+    retention: 24h
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 300m
+        memory: 512Mi
+
+grafana:
+  # Deploys Grafana in the same namespace as the Helm release ("monitoring")
+  # namespaceOverride: monitoring   # <- only if you MUST override; usually omit this
+
+  enabled: true
+  service:
+    type: ClusterIP
+  adminPassword: "opsboxadmin"
+
+  sidecar:
+    dashboards:
+      enabled: true
+      # These must match your dashboards ConfigMap labels
+      label: grafana_dashboard
+      labelValue: "1"
+      folder: /var/lib/grafana/dashboards/opsbox
+      searchNamespace: ALL
+      # If your ConfigMap is in the same namespace as Grafana, this is fine.
+      # searchNamespace: "MONITORING"  # defaults are usually OK
+    datasources:
+      enabled: true
+
+  dashboards:
+    opsbox:
+      opsbox-api:
+        folder: "opsbox"
+        json: |-
+          {
+            "title": "OpsBox API",
+            "timezone": "browser",
+            "schemaVersion": 39,
+            "version": 1,
+            "refresh": "30s",
+            "time": {
+              "from": "now-6h",
+              "to": "now"
+            },
+            "templating": {
+              "list": [
+                {
+                  "name": "datasource",
+                  "type": "datasource",
+                  "query": "prometheus",
+                  "refresh": 1,
+                  "hide": 0,
+                  "current": {
+                    "text": "prometheus",
+                    "value": "prometheus"
+                  }
+                },
+                {
+                  "name": "namespace",
+                  "type": "query",
+                  "label": "Namespace",
+                  "datasource": {
+                    "type": "prometheus",
+                    "uid": "$datasource"
+                  },
+                  "query": "label_values(kube_pod_info, namespace)",
+                  "refresh": 1,
+                  "hide": 0,
+                  "current": {
+                    "text": "dev",
+                    "value": "dev"
+                  }
+                },
+                {
+                  "name": "pod_prefix",
+                  "type": "constant",
+                  "label": "Pod prefix",
+                  "query": "opsbox-api",
+                  "hide": 0
+                }
+              ]
+            },
+            "panels": [
+              {
+                "type": "stat",
+                "title": "Req/s (total)",
+                "id": 1,
+                "gridPos": {"x": 0, "y": 0, "w": 6, "h": 4},
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+                },
+                "targets": [
+                  {
+                    "expr": "sum(rate(api_requests_total[5m]))",
+                    "legendFormat": "rps",
+                    "refId": "A"
+                  }
+                ],
+                "options": {
+                  "reduceOptions": {
+                    "calcs": [
+                      "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                  }
+                },
+                "fieldConfig": {
+                  "defaults": {
+                    "unit": "req/s"
+                  }
+                }
+              },
+              {
+                "type": "stat",
+                "title": "Error rate (5xx, %)",
+                "id": 2,
+                "gridPos": {"x": 6, "y": 0, "w": 6, "h": 4},
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+                },
+                "targets": [
+                  {
+                    "expr": "100 * (sum(rate(api_requests_total{status=~\"5..\"}[5m])) / sum(rate(api_requests_total[5m])))",
+                    "refId": "A"
+                  }
+                ],
+                "options": {
+                  "reduceOptions": {
+                    "calcs": [
+                      "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                  }
+                },
+                "fieldConfig": {
+                  "defaults": {
+                    "unit": "percent",
+                    "thresholds": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green"
+                        },
+                        {
+                          "color": "orange",
+                          "value": 5
+                        },
+                        {
+                          "color": "red",
+                          "value": 10
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "type": "timeseries",
+                "title": "Req/s by path",
+                "id": 3,
+                "gridPos": {"x": 12, "y": 0, "w": 12, "h": 6},
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+                },
+                "fieldConfig": {
+                  "defaults": {
+                    "unit": "req/s"
+                  }
+                },
+                "targets": [
+                  {
+                    "expr": "sum by (path) (rate(api_requests_total[5m]))",
+                    "legendFormat": "{{path}}",
+                    "refId": "A"
+                  }
+                ]
+              },
+              {
+                "type": "stat",
+                "title": "Latency p50 (s)",
+                "id": 4,
+                "gridPos": {"x": 0, "y": 4, "w": 6, "h": 4},
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+                },
+                "targets": [
+                  {
+                    "expr": "histogram_quantile(0.50, sum by (le) (rate(api_request_latency_seconds_bucket[5m])))",
+                    "refId": "A"
+                  }
+                ],
+                "options": {
+                  "reduceOptions": {
+                    "calcs": [
+                      "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                  }
+                },
+                "fieldConfig": {
+                  "defaults": {
+                    "unit": "s"
+                  }
+                }
+              },
+              {
+                "type": "stat",
+                "title": "Latency p95 (s)",
+                "id": 5,
+                "gridPos": {"x": 6, "y": 4, "w": 6, "h": 4},
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+                },
+                "targets": [
+                  {
+                    "expr": "histogram_quantile(0.95, sum by (le) (rate(api_request_latency_seconds_bucket[5m])))",
+                    "refId": "A"
+                  }
+                ],
+                "options": {
+                  "reduceOptions": {
+                    "calcs": [
+                      "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                  }
+                },
+                "fieldConfig": {
+                  "defaults": {
+                    "unit": "s"
+                  }
+                }
+              },
+              {
+                "type": "timeseries",
+                "title": "Memory (MiB) by pod",
+                "id": 6,
+                "gridPos": {"x": 0, "y": 8, "w": 12, "h": 7},
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+                },
+                "fieldConfig": {
+                  "defaults": {
+                    "unit": "mibytes"
+                  }
+                },
+                "targets": [
+                  {
+                    "expr": "sum by (pod) (container_memory_working_set_bytes{namespace=\"$namespace\", pod=~\"$pod_prefix.*\", container!=\"\", image!=\"\"}) / 1024 / 1024",
+                    "legendFormat": "{{pod}}",
+                    "refId": "A"
+                  }
+                ]
+              },
+              {
+                "type": "timeseries",
+                "title": "Memory % of limit",
+                "id": 7,
+                "gridPos": {"x": 12, "y": 6, "w": 12, "h": 9},
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+                },
+                "fieldConfig": {
+                  "defaults": {
+                    "unit": "percent"
+                  }
+                },
+                "targets": [
+                  {
+                    "expr": "(\n  sum by (pod) (container_memory_working_set_bytes{namespace=\"$namespace\", pod=~\"$pod_prefix.*\", container!=\"\", image!=\"\"})\n/\n  sum by (pod) (kube_pod_container_resource_limits{namespace=\"$namespace\", resource=\"memory\", unit=\"byte\", pod=~\"$pod_prefix.*\"})\n) * 100",
+                    "legendFormat": "{{pod}}",
+                    "refId": "A"
+                  }
+                ]
+              },
+              {
+                "type": "timeseries",
+                "title": "CPU cores (usage) by pod",
+                "id": 8,
+                "gridPos": {"x": 0, "y": 15, "w": 12, "h": 7},
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+                },
+                "fieldConfig": {
+                  "defaults": {
+                    "unit": "cores"
+                  }
+                },
+                "targets": [
+                  {
+                    "expr": "sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"$namespace\", pod=~\"$pod_prefix.*\", container!=\"\", image!=\"\"}[5m]))",
+                    "legendFormat": "{{pod}}",
+                    "refId": "A"
+                  }
+                ]
+              },
+              {
+                "type": "timeseries",
+                "title": "CPU % of request",
+                "id": 9,
+                "gridPos": {"x": 12, "y": 15, "w": 12, "h": 7},
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+                },
+                "fieldConfig": {
+                  "defaults": {
+                    "unit": "percent"
+                  }
+                },
+                "targets": [
+                  {
+                    "expr": "(\n  sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"$namespace\", pod=~\"$pod_prefix.*\", container!=\"\", image!=\"\"}[5m]))\n/\n  sum by (pod) (kube_pod_container_resource_requests{namespace=\"$namespace\", resource=\"cpu\", unit=\"core\", pod=~\"$pod_prefix.*\"})\n) * 100",
+                    "legendFormat": "{{pod}}",
+                    "refId": "A"
+                  }
+                ]
+              }
+            ]
+          }
+      opsbox-worker:
+        folder: "opsbox"
+        json: |-
+          {
+            "title": "OpsBox Worker",
+            "timezone": "browser",
+            "schemaVersion": 39,
+            "version": 1,
+            "refresh": "30s",
+            "time": {
+              "from": "now-6h",
+              "to": "now"
+            },
+            "templating": {
+              "list": [
+                {
+                  "name": "datasource",
+                  "type": "datasource",
+                  "query": "prometheus",
+                  "refresh": 1,
+                  "hide": 0,
+                  "current": {
+                    "text": "prometheus",
+                    "value": "prometheus"
+                  }
+                },
+                {
+                  "name": "namespace",
+                  "type": "query",
+                  "label": "Namespace",
+                  "datasource": {
+                    "type": "prometheus",
+                    "uid": "$datasource"
+                  },
+                  "query": "label_values(kube_pod_info, namespace)",
+                  "refresh": 1,
+                  "hide": 0,
+                  "current": {
+                    "text": "dev",
+                    "value": "dev"
+                  }
+                },
+                {
+                  "name": "pod_prefix",
+                  "type": "constant",
+                  "label": "Pod prefix",
+                  "query": "opsbox-worker",
+                  "hide": 0
+                }
+              ]
+            },
+            "panels": [
+              {
+                "type": "stat",
+                "title": "Jobs succeeded (5m)",
+                "id": 1,
+                "gridPos": {"x": 0, "y": 0, "w": 4, "h": 4},
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+                },
+                "targets": [
+                  {
+                    "expr": "increase(worker_jobs_total{result=\"SUCCEEDED\"}[5m])",
+                    "refId": "A"
+                  }
+                ],
+                "options": {
+                  "reduceOptions": {
+                    "calcs": [
+                      "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                  }
+                },
+                "fieldConfig": {
+                  "defaults": {
+                    "unit": "short"
+                  }
+                }
+              },
+              {
+                "type": "stat",
+                "title": "Jobs failed (5m)",
+                "id": 2,
+                "gridPos": {"x": 4, "y": 0, "w": 4, "h": 4},
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+                },
+                "targets": [
+                  {
+                    "expr": "increase(worker_jobs_total{result=\"FAILED\"}[5m])",
+                    "refId": "A"
+                  }
+                ],
+                "options": {
+                  "reduceOptions": {
+                    "calcs": [
+                      "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                  }
+                },
+                "fieldConfig": {
+                  "defaults": {
+                    "unit": "short",
+                    "thresholds": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green"
+                        },
+                        {
+                          "color": "orange",
+                          "value": 1
+                        },
+                        {
+                          "color": "red",
+                          "value": 5
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "type": "stat",
+                "title": "Cleanup deleted (5m)",
+                "id": 3,
+                "gridPos": {"x": 8, "y": 0, "w": 4, "h": 4},
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+                },
+                "targets": [
+                  {
+                    "expr": "increase(worker_cleanups_total[5m])",
+                    "refId": "A"
+                  }
+                ],
+                "options": {
+                  "reduceOptions": {
+                    "calcs": [
+                      "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                  }
+                },
+                "fieldConfig": {
+                  "defaults": {
+                    "unit": "short"
+                  }
+                }
+              },
+              {
+                "type": "timeseries",
+                "title": "Job latency p95 (s)",
+                "id": 4,
+                "gridPos": {"x": 0, "y": 4, "w": 12, "h": 6},
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+                },
+                "fieldConfig": {
+                  "defaults": {
+                    "unit": "s"
+                  }
+                },
+                "targets": [
+                  {
+                    "expr": "histogram_quantile(0.95, sum by (le) (rate(worker_job_latency_seconds_bucket[5m])))",
+                    "legendFormat": "p95",
+                    "refId": "A"
+                  }
+                ]
+              },
+              {
+                "type": "timeseries",
+                "title": "Memory (MiB) by pod",
+                "id": 5,
+                "gridPos": {"x": 0, "y": 10, "w": 12, "h": 7},
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+                },
+                "fieldConfig": {
+                  "defaults": {
+                    "unit": "mibytes"
+                  }
+                },
+                "targets": [
+                  {
+                    "expr": "sum by (pod) (container_memory_working_set_bytes{namespace=\"$namespace\", pod=~\"$pod_prefix.*\", container!=\"\", image!=\"\"}) / 1024 / 1024",
+                    "legendFormat": "{{pod}}",
+                    "refId": "A"
+                  }
+                ]
+              },
+              {
+                "type": "timeseries",
+                "title": "Memory % of limit",
+                "id": 6,
+                "gridPos": {"x": 12, "y": 10, "w": 12, "h": 7},
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+                },
+                "fieldConfig": {
+                  "defaults": {
+                    "unit": "percent"
+                  }
+                },
+                "targets": [
+                  {
+                    "expr": "(\n  sum by (pod) (container_memory_working_set_bytes{namespace=\"$namespace\", pod=~\"$pod_prefix.*\", container!=\"\", image!=\"\"})\n/\n  sum by (pod) (kube_pod_container_resource_limits{namespace=\"$namespace\", resource=\"memory\", unit=\"byte\", pod=~\"$pod_prefix.*\"})\n) * 100",
+                    "legendFormat": "{{pod}}",
+                    "refId": "A"
+                  }
+                ]
+              },
+              {
+                "type": "timeseries",
+                "title": "CPU cores (usage) by pod",
+                "id": 7,
+                "gridPos": {"x": 0, "y": 17, "w": 12, "h": 7},
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+                },
+                "fieldConfig": {
+                  "defaults": {
+                    "unit": "cores"
+                  }
+                },
+                "targets": [
+                  {
+                    "expr": "sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"$namespace\", pod=~\"$pod_prefix.*\", container!=\"\", image!=\"\"}[5m]))",
+                    "legendFormat": "{{pod}}",
+                    "refId": "A"
+                  }
+                ]
+              },
+              {
+                "type": "timeseries",
+                "title": "CPU % of request",
+                "id": 8,
+                "gridPos": {"x": 12, "y": 17, "w": 12, "h": 7},
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+                },
+                "fieldConfig": {
+                  "defaults": {
+                    "unit": "percent"
+                  }
+                },
+                "targets": [
+                  {
+                    "expr": "(\n  sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"$namespace\", pod=~\"$pod_prefix.*\", container!=\"\", image!=\"\"}[5m]))\n/\n  sum by (pod) (kube_pod_container_resource_requests{namespace=\"$namespace\", resource=\"cpu\", unit=\"core\", pod=~\"$pod_prefix.*\"})\n) * 100",
+                    "legendFormat": "{{pod}}",
+                    "refId": "A"
+                  }
+                ]
+              }
+            ]
+          }
+      opsbox-rabbitmq:
+        folder: "opsbox"
+        json: |-
+          {
+            "annotations": {
+              "list": [
+                {
+                  "builtIn": 1,
+                  "datasource": {
+                    "type": "grafana",
+                    "uid": "-- Grafana --"
+                  },
+                  "enable": true,
+                  "hide": false,
+                  "iconColor": "rgba(0, 211, 255, 1)",
+                  "name": "Annotations & Alerts",
+                  "type": "dashboard"
+                }
+              ]
+            },
+            "editable": true,
+            "fiscalYearStartMonth": 0,
+            "graphTooltip": 0,
+            "id": null,
+            "links": [],
+            "liveNow": false,
+            "panels": [
+              {
+                "collapsed": false,
+                "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
+                "id": 1,
+                "panels": [],
+                "title": "Overview",
+                "type": "row"
+              },
+              {
+                "type": "stat",
+                "title": "Connections",
+                "id": 2,
+                "gridPos": {"h": 4, "w": 6, "x": 0, "y": 1},
+                "datasource": "${DS_PROM}",
+                "targets": [
+                  {
+                    "refId": "A",
+                    "expr": "sum(rabbitmq_connections)"
+                  }
+                ],
+                "options": {
+                  "reduceOptions": {
+                    "calcs": [
+                      "lastNotNull"
+                    ]
+                  },
+                  "orientation": "auto"
+                }
+              },
+              {
+                "type": "stat",
+                "title": "Channels",
+                "id": 3,
+                "gridPos": {"h": 4, "w": 6, "x": 6, "y": 1},
+                "datasource": "${DS_PROM}",
+                "targets": [
+                  {
+                    "refId": "A",
+                    "expr": "sum(rabbitmq_channels)"
+                  }
+                ],
+                "options": {
+                  "reduceOptions": {
+                    "calcs": [
+                      "lastNotNull"
+                    ]
+                  }
+                }
+              },
+              {
+                "type": "stat",
+                "title": "Queues",
+                "id": 4,
+                "gridPos": {"h": 4, "w": 6, "x": 12, "y": 1},
+                "datasource": "${DS_PROM}",
+                "targets": [
+                  {
+                    "refId": "A",
+                    "expr": "count(rabbitmq_queue_messages_ready)"
+                  }
+                ],
+                "options": {
+                  "reduceOptions": {
+                    "calcs": [
+                      "lastNotNull"
+                    ]
+                  }
+                }
+              },
+              {
+                "type": "stat",
+                "title": "Consumers",
+                "id": 5,
+                "gridPos": {"h": 4, "w": 6, "x": 18, "y": 1},
+                "datasource": "${DS_PROM}",
+                "targets": [
+                  {
+                    "refId": "A",
+                    "expr": "sum(rabbitmq_queue_consumers)"
+                  }
+                ],
+                "options": {
+                  "reduceOptions": {
+                    "calcs": [
+                      "lastNotNull"
+                    ]
+                  }
+                }
+              },
+              {
+                "collapsed": false,
+                "gridPos": {"h": 1, "w": 24, "x": 0, "y": 5},
+                "id": 6,
+                "panels": [],
+                "title": "Message Rates",
+                "type": "row"
+              },
+              {
+                "type": "timeseries",
+                "title": "Messages Ready vs Unacked",
+                "id": 7,
+                "gridPos": {"h": 8, "w": 12, "x": 0, "y": 6},
+                "datasource": "${DS_PROM}",
+                "targets": [
+                  {
+                    "refId": "A",
+                    "expr": "sum(rabbitmq_queue_messages_ready)"
+                  },
+                  {
+                    "refId": "B",
+                    "expr": "sum(rabbitmq_queue_messages_unacked)"
+                  }
+                ]
+              },
+              {
+                "type": "timeseries",
+                "title": "Publish / Deliver / Ack (rate)",
+                "id": 8,
+                "gridPos": {"h": 8, "w": 12, "x": 12, "y": 6},
+                "datasource": "${DS_PROM}",
+                "targets": [
+                  {
+                    "refId": "A",
+                    "expr": "sum(rate(rabbitmq_messages_published_total[5m]))"
+                  },
+                  {
+                    "refId": "B",
+                    "expr": "sum(rate(rabbitmq_messages_delivered_total[5m]))"
+                  },
+                  {
+                    "refId": "C",
+                    "expr": "sum(rate(rabbitmq_messages_acked_total[5m]))"
+                  }
+                ]
+              },
+              {
+                "collapsed": false,
+                "gridPos": {"h": 1, "w": 24, "x": 0, "y": 14},
+                "id": 9,
+                "panels": [],
+                "title": "Per-Queue",
+                "type": "row"
+              },
+              {
+                "type": "table",
+                "title": "Top 10 Queues by Messages Ready",
+                "id": 10,
+                "gridPos": {"h": 8, "w": 12, "x": 0, "y": 15},
+                "datasource": "${DS_PROM}",
+                "targets": [
+                  {
+                    "refId": "A",
+                    "expr": "topk(10, sum by (queue) (rabbitmq_queue_messages_ready))"
+                  }
+                ],
+                "options": {
+                  "showHeader": true
+                }
+              },
+              {
+                "type": "table",
+                "title": "Top 10 Queues by Unacked",
+                "id": 11,
+                "gridPos": {"h": 8, "w": 12, "x": 12, "y": 15},
+                "datasource": "${DS_PROM}",
+                "targets": [
+                  {
+                    "refId": "A",
+                    "expr": "topk(10, sum by (queue) (rabbitmq_queue_messages_unacked))"
+                  }
+                ]
+              },
+              {
+                "collapsed": false,
+                "gridPos": {"h": 1, "w": 24, "x": 0, "y": 23},
+                "id": 12,
+                "panels": [],
+                "title": "Broker Resources",
+                "type": "row"
+              },
+              {
+                "type": "timeseries",
+                "title": "Memory Used",
+                "id": 13,
+                "gridPos": {"h": 6, "w": 8, "x": 0, "y": 24},
+                "datasource": "${DS_PROM}",
+                "targets": [
+                  {
+                    "refId": "A",
+                    "expr": "sum(rabbitmq_mem_used)"
+                  }
+                ]
+              },
+              {
+                "type": "timeseries",
+                "title": "Disk Free",
+                "id": 14,
+                "gridPos": {"h": 6, "w": 8, "x": 8, "y": 24},
+                "datasource": "${DS_PROM}",
+                "targets": [
+                  {
+                    "refId": "A",
+                    "expr": "sum(rabbitmq_disk_free)"
+                  }
+                ]
+              },
+              {
+                "type": "timeseries",
+                "title": "Erlang Processes Used",
+                "id": 15,
+                "gridPos": {"h": 6, "w": 8, "x": 16, "y": 24},
+                "datasource": "${DS_PROM}",
+                "targets": [
+                  {
+                    "refId": "A",
+                    "expr": "sum(rabbitmq_erlang_processes)"
+                  }
+                ]
+              }
+            ],
+            "refresh": "10s",
+            "schemaVersion": 36,
+            "style": "dark",
+            "tags": [
+              "rabbitmq",
+              "opsbox"
+            ],
+            "templating": {
+              "list": [
+                {
+                  "hide": 0,
+                  "label": "Datasource",
+                  "name": "DS_PROM",
+                  "query": "prometheus",
+                  "refresh": 1,
+                  "type": "datasource"
+                }
+              ]
+            },
+            "time": {
+              "from": "now-1h",
+              "to": "now"
+            },
+            "timezone": "browser",
+            "title": "RabbitMQ - OpsBox",
+            "uid": "opsbox-rmq",
+            "version": 1
+          }
