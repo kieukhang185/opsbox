@@ -29,6 +29,7 @@ jobs:
     outputs:
       api-build: ${{ steps.filter.outputs.api }}
       worker-build: ${{ steps.filter.outputs.worker }}
+      shared-common: ${{ steps.filter.outputs.shared }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -41,11 +42,13 @@ jobs:
             api:
               - 'api/*'
             worker:
-              - 'worker/**'
+              - 'worker/*'
+            shared:
+              - 'shared/opsbox_common/*'
 
   build-push-api:
     needs: detect-changes
-    if: needs.detect-changes.outputs.api-build == 'true'
+    if: (needs.detect-changes.outputs.api-build == 'true' || needs.detect-changes.outputs.shared == 'true')
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -91,7 +94,7 @@ jobs:
 
   build-push-worker:
     needs: detect-changes
-    if: needs.detect-changes.outputs.worker-build == 'true'
+    if: (needs.detect-changes.outputs.worker-build == 'true' || needs.detect-changes.outputs.shared == 'true')
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -138,7 +141,7 @@ jobs:
   deploy-and-test:
     needs: [build-push-api, build-push-worker, detect-changes]
     if: ${{ always() && (needs.build-push-api.result == 'success' || needs.build-push-worker.result == 'skipped')
-      && (needs.build-push-api.result == 'success' || needs.build-push-worker.result == 'skipped')}}
+      && (needs.build-push-api.result == 'success' || needs.build-push-worker.result == 'skipped') && (github.ref_name == 'main') }}
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout code
