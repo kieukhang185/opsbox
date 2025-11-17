@@ -61,7 +61,7 @@ ensure_namespace "${K8S_NAMESPACE}"
 apply_app_secret(){
     log_info "Applying application secrets..."
     export SOPS_AGE_KEY_FILE="${SOPS_AGE_KEY_FILE:-${WORKSPACE}/ops/infra/age.key}"
-    export SOPS_CONFIG="${SOPS_CONFIG:-${WORKSPACE}/.sops.yaml}"
+    export SOPS_CONFIG="${SOPS_CONFIG:-${WORKSPACE}/configs/.sops.yaml}"
     export ENCRYPTED_SECRETS_FILE="${ENCRYPTED_SECRETS_FILE:-${WORKSPACE}/ops/secrets/dev.app.enc.yaml}"
 
     exist "${SOPS_AGE_KEY_FILE}" || { log_error "Please create AGE private key at ${SOPS_AGE_KEY_FILE}"; exit 1; }
