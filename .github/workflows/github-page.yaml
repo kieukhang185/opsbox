@@ -57,7 +57,7 @@ jobs:
       - name: Assemble pages artifact
         run: |
           mkdir -p public
-          cp -r site/* public/
+          cp -r site public/
           cp index.html public/
 
       - name: Upload artifact
