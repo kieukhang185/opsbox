@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
+  <defs>
+    <linearGradient id="g" x1="0" x2="1">
+      <stop offset="0" stop-color="#111"/>
+      <stop offset="1" stop-color="#555"/>
+    </linearGradient>
+  </defs>
+  <rect x="10" y="10" width="100" height="100" rx="18" fill="#fff" stroke="#111" stroke-width="4"/>
+  <!-- isometric box -->
+  <path d="M60 28 L90 44 L60 60 L30 44 Z" fill="url(#g)" stroke="#111" stroke-width="2"/>
+  <path d="M30 44 L60 60 L60 92 L30 76 Z" fill="#eaeaea" stroke="#111" stroke-width="2"/>
+  <path d="M90 44 L60 60 L60 92 L90 76 Z" fill="#d9d9d9" stroke="#111" stroke-width="2"/>
+  <!-- text OPS -->
+  <text x="60" y="108" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="18" fill="#111" font-weight="800">OPSBOX</text>
+</svg>

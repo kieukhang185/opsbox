@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Overview — OpsBox</title>
+  <meta name="description"
+    content="OpsBox: API + worker with full DevOps (Kubernetes, Helm, CI/CD, observability, security). FastAPI, Celery, Postgres, RabbitMQ." />
+  <meta name="keywords"
+    content="DevOps, Kubernetes, CI/CD, Observability, FastAPI, Celery, Postgres, RabbitMQ, Helm, Python, Docker" />
+  <meta name="author" content="Khang Kieu" />
+  <link rel="icon" type="image/svg+xml" href="site/assets/logo.svg" />
+  <link rel="apple-touch-icon" href="site/assets/logo.png" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="site/assets/styles.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand"><img src="site/assets/logo.svg" alt="OpsBox logo" width="22" height="22"
+          style="margin-right:8px" /><strong>OpsBox</strong> <span class="kicker" style="margin-left:8px">All DevOps in
+          a Box</span></div>
+      <a class="navlink active" href="index.html">Overview</a>
+      <a class="navlink" href="site/architecture.html">Architecture</a>
+      <a class="navlink" href="site/quickstart.html">Quickstart</a>
+      <a class="navlink" href="site/cicd.html">CI/CD</a>
+      <a class="navlink" href="site/observability.html">Observability</a>
+      <a class="navlink" href="site/security.html">Security</a>
+      <a class="navlink" href="site/links.html">Links</a>
+    </aside>
+    <main class="content">
+      <div class="wrap">
+        <div class="topbar">
+          <div class="gh-group"><span class="subtle">GitHub:</span>
+            <a class="gh-btn" href="https://github.com/kieukhang185/opsbox" target="_blank" rel="noopener"
+              title="Open GitHub Repo">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                <path
+                  d="M8 .2a8 8 0 0 0-2.53 15.6c.4.07.55-.18.55-.39v-1.37c-2.24.49-2.72-1.08-2.72-1.08-.37-.94-.9-1.2-.9-1.2-.74-.5.06-.49.06-.49.82.06 1.25.85 1.25.85.73 1.25 1.92.89 2.39.68.07-.53.29-.89.52-1.1-1.79-.2-3.67-.9-3.67-3.98 0-.88.31-1.6.83-2.17-.08-.2-.36-1.02.08-2.12 0 0 .68-.22 2.24.83a7.7 7.7 0 0 1 4.08 0c1.56-1.05 2.24-.83 2.24-.83.44 1.1.16 1.92.08 2.12.52.57.83 1.29.83 2.17 0 3.1-1.88 3.77-3.67 3.97.3.26.56.77.56 1.56v2.31c0 .21.14.46.56.39A8 8 0 0 0 8 .2z" />
+              </svg>
+              Repo
+            </a>
+            <a class="gh-btn" href="https://github.com/kieukhang185/opsbox/stargazers" target="_blank" rel="noopener"
+              title="Star on GitHub">
+              ⭐ Stars <span class="gh-count" data-gh="stars">…</span>
+            </a>
+            <a class="gh-btn" href="https://github.com/kieukhang185/opsbox/fork" target="_blank" rel="noopener"
+              title="Fork on GitHub">
+              🍴 Forks <span class="gh-count" data-gh="forks">…</span>
+            </a>
+            <button class="gh-btn theme-btn" id="themeToggle" title="Toggle theme">🌙 Dark</button>
+          </div>
+        </div>
+
+        <section class="hero">
+          <div class="card">
+            <div class="kicker">Python • Kubernetes • CI/CD • Observability</div>
+            <h1>OpsBox</h1>
+            <p class="lead">A small, real service (API + worker) and all the DevOps around it—containers, Kubernetes,
+              CI/CD, observability, and security—so you become production-fluent in Python &amp; Bash.</p>
+            <div class="cta">
+              <a class="btn" href="https://github.com/kieukhang185/opsbox" target="_blank" rel="noopener">View
+                Repository</a>
+              <a class="btn secondary" href="site/quickstart.html">Get Started</a>
+            </div>
+          </div>
+          <div class="card">
+            <h3 style="margin-top:0">Highlights</h3>
+            <ul class="list">
+              <li><b>API:</b> FastAPI with <code class="kbd">/tasks</code> CRUD, <code class="kbd">/health</code>, <code
+                  class="kbd">/metrics</code></li>
+              <li><b>Worker:</b> Celery + RabbitMQ (background jobs, scheduled cleanup)</li>
+              <li><b>Data:</b> Postgres + Alembic</li>
+              <li><b>K8s:</b> Helm charts, dev namespace, kind cluster helpers</li>
+              <li><b>Delivery:</b> Argo Rollouts canary + auto-rollback on SLO</li>
+              <li><b>Obs:</b> Prometheus, Grafana, Loki, alert rules</li>
+              <li><b>CI/CD:</b> Build & test on PRs; deploy on merge</li>
+            </ul>
+          </div>
+        </section>
+        <section>
+          <div class="grid cols-2">
+            <div class="card">
+              <h3>Purpose</h3>
+              <p class="subtle">Build and operate a realistic service end-to-end, focusing on platform skills:
+                containers, Kubernetes, automation, testing, observability, security, and safe releases.</p>
+              <div style="margin-top:10px">
+                <span class="stack-chip">FastAPI</span>
+                <span class="stack-chip">Celery</span>
+                <span class="stack-chip">Postgres</span>
+                <span class="stack-chip">RabbitMQ</span>
+                <span class="stack-chip">Helm</span>
+                <span class="stack-chip">kind</span>
+                <span class="stack-chip">Prometheus</span>
+                <span class="stack-chip">Grafana</span>
+                <span class="stack-chip">Loki</span>
+              </div>
+            </div>
+            <div class="card">
+              <h3>Repo Structure</h3>
+              <pre class="mono">api/         # FastAPI app
+worker/      # Celery worker & tasks
+ops/helm/    # Helm charts (api, worker, postgres, rabbitmq)
+ops/scripts/ # bootstrap, pipeline, teardown, smoke
+tools/opsbox_cli/ # Typer CLI
+tests/       # Pytest suite
+shared/      # common code, config
+alembic/     # migrations
+docker-compose.yaml
+Makefile</pre>
+              <p class="subtle" style="margin-top:6px">See the repo for latest files &amp; Make targets. <a
+                  href="https://github.com/kieukhang185/opsbox" target="_blank" rel="noopener">GitHub →</a></p>
+            </div>
+          </div>
+        </section>
+
+        <footer>© <span id="year"></span> OpsBox • Built with ❤️ for platform fluency.</footer>
+      </div>
+    </main>
+  </div>
+  <script src="site/assets/site.js"></script>
+</body>
+</html>

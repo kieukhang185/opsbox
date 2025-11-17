@@ -2,6 +2,7 @@ import time
 
 from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from opsbox_common.database import init_db
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
@@ -11,6 +12,7 @@ from app.routes.task import route as task
 
 app = FastAPI(
     title="OpsBox API",
+    root_path="/api",
 )
 
 origins = [
@@ -50,6 +52,11 @@ async def metrics_middleware(request, call_next):
     REQS.labels(request.method, path, str(response.status_code)).inc()
     LAT.labels(request.method, path).observe(duration)
     return response
+
+
+@app.get("/")
+def read_root():
+    return RedirectResponse(url="/docs")
 
 
 @app.get("/health")

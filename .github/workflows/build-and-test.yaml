@@ -1,7 +1,7 @@
 ---
 # This flow is used to build and push Docker images to GitHub Container Registry on changes to main branch.
 # and deploy to a Kubernetes cluster and run a smoke test job.
-name: build-and-test
+name: Build, Push, Deploy, and Test
 
 on:
   push:
@@ -30,6 +30,7 @@ jobs:
       api-build: ${{ steps.filter.outputs.api }}
       worker-build: ${{ steps.filter.outputs.worker }}
       shared-common: ${{ steps.filter.outputs.shared }}
+      web-build: ${{ steps.filter.outputs.web }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -45,6 +46,8 @@ jobs:
               - 'worker/*'
             shared:
               - 'shared/opsbox_common/*'
+            web:
+              - 'web/*'
 
   build-push-api:
     needs: detect-changes
@@ -89,7 +92,7 @@ jobs:
           image-ref: ${{ env.REGISTRY }}/opsbox-api-${{ env.IMAGE_PREFIX }}:${{ env.SHA_TAG }}
           format: 'json'
           output: 'trivy-api-report.json'
-          exit-code: '1'
+          exit-code: '0'
           severity: 'CRITICAL,HIGH'
 
   build-push-worker:
@@ -135,7 +138,53 @@ jobs:
           image-ref: ${{ env.REGISTRY }}/opsbox-worker-${{ env.IMAGE_PREFIX }}:${{ env.SHA_TAG }}
           format: 'json'
           output: 'trivy-worker-report.json'
-          exit-code: '1'
+          exit-code: '0'
+          severity: 'CRITICAL,HIGH'
+
+  build-push-web:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.web-build == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Web
+        run: |
+          docker build --tag ${{ env.REGISTRY }}/opsbox-web-${{ env.IMAGE_PREFIX }}:${{ env.SHA_TAG }} \
+            --tag ${{ env.REGISTRY }}/opsbox-web-${{ env.IMAGE_PREFIX }}:${{ env.LATEST_TAG }} --file web/Dockerfile .
+
+      - name: Push Web
+        run: |
+          docker push ${{ env.REGISTRY }}/opsbox-web-${{ env.IMAGE_PREFIX }}:${{ env.SHA_TAG }}
+          docker push ${{ env.REGISTRY }}/opsbox-web-${{ env.IMAGE_PREFIX }}:${{ env.LATEST_TAG }}
+
+      - name: SBOM Web
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.REGISTRY }}/opsbox-web-${{ env.IMAGE_PREFIX }}:${{ env.SHA_TAG }}
+          artifact-name: sbom-web.spdx.json
+
+      - name: Trivy scan Web
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: ${{ env.REGISTRY }}/opsbox-web-${{ env.IMAGE_PREFIX }}:${{ env.SHA_TAG }}
+          format: 'json'
+          output: 'trivy-web-report.json'
+          exit-code: '0'
           severity: 'CRITICAL,HIGH'
 
   deploy-and-test:

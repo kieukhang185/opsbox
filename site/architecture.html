@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Architecture — OpsBox</title>
+  <meta name="description"
+    content="OpsBox: API + worker with full DevOps (Kubernetes, Helm, CI/CD, observability, security). FastAPI, Celery, Postgres, RabbitMQ." />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand"><img src="assets/logo.svg" alt="OpsBox logo" width="22" height="22"
+          style="margin-right:8px" /><strong>OpsBox</strong> <span class="kicker" style="margin-left:8px">All DevOps in
+          a Box</span></div>
+      <a class="navlink" href="../index.html">Overview</a>
+      <a class="navlink active" href="architecture.html">Architecture</a>
+      <a class="navlink" href="quickstart.html">Quickstart</a>
+      <a class="navlink" href="cicd.html">CI/CD</a>
+      <a class="navlink" href="observability.html">Observability</a>
+      <a class="navlink" href="security.html">Security</a>
+      <a class="navlink" href="links.html">Links</a>
+    </aside>
+    <main class="content">
+      <div class="wrap">
+        <div class="topbar">
+          <div class="gh-group"><span class="subtle">GitHub:</span>
+            <a class="gh-btn" href="https://github.com/kieukhang185/opsbox" target="_blank" rel="noopener"
+              title="Open GitHub Repo">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                <path
+                  d="M8 .2a8 8 0 0 0-2.53 15.6c.4.07.55-.18.55-.39v-1.37c-2.24.49-2.72-1.08-2.72-1.08-.37-.94-.9-1.2-.9-1.2-.74-.5.06-.49.06-.49.82.06 1.25.85 1.25.85.73 1.25 1.92.89 2.39.68.07-.53.29-.89.52-1.1-1.79-.2-3.67-.9-3.67-3.98 0-.88.31-1.6.83-2.17-.08-.2-.36-1.02.08-2.12 0 0 .68-.22 2.24.83a7.7 7.7 0 0 1 4.08 0c1.56-1.05 2.24-.83 2.24-.83.44 1.1.16 1.92.08 2.12.52.57.83 1.29.83 2.17 0 3.1-1.88 3.77-3.67 3.97.3.26.56.77.56 1.56v2.31c0 .21.14.46.56.39A8 8 0 0 0 8 .2z" />
+              </svg>
+              Repo
+            </a>
+            <a class="gh-btn" href="https://github.com/kieukhang185/opsbox/stargazers" target="_blank" rel="noopener"
+              title="Star on GitHub">
+              ⭐ Stars <span class="gh-count" data-gh="stars">…</span>
+            </a>
+            <a class="gh-btn" href="https://github.com/kieukhang185/opsbox/fork" target="_blank" rel="noopener"
+              title="Fork on GitHub">
+              🍴 Forks <span class="gh-count" data-gh="forks">…</span>
+            </a>
+            <button class="gh-btn theme-btn" id="themeToggle" title="Toggle theme">🌙 Dark</button>
+          </div>
+        </div>
+
+
+        <h1>Architecture</h1>
+        <div class="card">
+          <div class="grid cols-3">
+            <div>
+              <h3>API</h3>
+              <p class="subtle">FastAPI provides REST: <code class="kbd">/tasks</code>, <code
+                  class="kbd">/health</code>, <code class="kbd">/metrics</code>. Posting to <code
+                  class="kbd">/tasks/{id}/run</code> enqueues a background job.</p>
+            </div>
+            <div>
+              <h3>Worker</h3>
+              <p class="subtle">Celery worker consumes tasks from RabbitMQ; supports scheduled cleanups; exports worker
+                metrics.</p>
+            </div>
+            <div>
+              <h3>Data & Queue</h3>
+              <p class="subtle">Task state in Postgres via SQLAlchemy/Alembic; RabbitMQ is the broker; Redis can be used
+                for Celery result backend.</p>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:12px">
+          <h3 style="margin-top:0">Progressive Delivery</h3>
+          <p class="subtle">Argo Rollouts drives canary (e.g., 10% → 30% → 100%) with Prometheus metrics checks;
+            auto-rollback on SLO breach.</p>
+        </div>
+
+        <footer>© <span id="year"></span> OpsBox • Built with ❤️ for platform fluency.</footer>
+      </div>
+    </main>
+  </div>
+  <script src="assets/site.js"></script>
+</body>
+
+</html>

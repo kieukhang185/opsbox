@@ -24,14 +24,14 @@ COPY shared/opsbox_common ./opsbox_common
 
 RUN chown -R app:app /app/app/data
 
-COPY entrypoint.sh /entrypoint.sh
+COPY api/entrypoint.sh /entrypoint.sh
 
 RUN chmod +x /entrypoint.sh
 
 USER app
 
-EXPOSE 8001
+EXPOSE 8000
 
-HEALTHCHECK --interval=10s --timeout=2s CMD python -c "import socket;s=socket.socket();s.settimeout(1);s.connect(('127.0.0.1',8001))" || exit 1
+HEALTHCHECK --interval=10s --timeout=2s CMD python -c "import socket;s=socket.socket();s.settimeout(1);s.connect(('127.0.0.1',8000))" || exit 1
 
 ENTRYPOINT ["/entrypoint.sh"]
