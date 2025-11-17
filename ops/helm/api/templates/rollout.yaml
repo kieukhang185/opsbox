@@ -52,9 +52,11 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          ports: [{ name: http, containerPort: 8000 }]
+          ports: [{ name: http, containerPort: {{ .Values.containerPort }} }]
+          {{- with .Values.envFrom }}
           envFrom:
-            - secretRef: { name: opsbox-app-secrets }
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           {{- with .Values.startupProbe }}
           startupProbe:
             {{- toYaml . | nindent 12 }}
