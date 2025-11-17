@@ -44,6 +44,7 @@ repos:
         args:
           - --select=F,E,I,UP,PERF  # example narrow set; tune to avoid overlap
           - --ignore=E501
+          - --config=configs/.ruff.toml
 
   # Type checking
   - repo: https://github.com/pre-commit/mirrors-mypy

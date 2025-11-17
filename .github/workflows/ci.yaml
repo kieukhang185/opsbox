@@ -59,8 +59,8 @@ jobs:
                   pip install alembic pytest ruff pika
             - name: Lint (ruff)
               run: |
-                  ruff check .
-                  ruff format --check .
+                  ruff check . --config configs/.ruff.toml
+                  ruff format --check . --config configs/.ruff.toml
             - name: Waite for servicess
               run: |
                   for i in {1..30}; do
