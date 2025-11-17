@@ -16,9 +16,10 @@ declare global {
 }
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  baseURL: import.meta.env.VITE_API_BASE_URL || "/api",
   timeout: 10_000,
 });
+console.log("API base URL:", api.defaults.baseURL);
 
 api.interceptors.request.use((config) => {
   const token = import.meta.env.VITE_AUTH_TOKEN;
@@ -45,10 +46,15 @@ export async function list<T>(
   url: string,
   params?: ListParams,
 ): Promise<ListResponse<T>> {
+  console.log("list request:", url, params);
   const res = await api.get(url, { params });
-  const data = res.data;
-  if (Array.isArray(data)) return { items: data };
-  return data as ListResponse<T>;
+  console.log("list response:", url);
+  const d = res.data ?? {};
+  if (Array.isArray(d)) return { items: d };
+  const items = Array.isArray(d.items) ? d.items : [];
+  const cont = typeof d.continue === "string" ? d.continue : undefined;
+  const total = typeof d.total === "number" ? d.total : undefined;
+  return { items, continue: cont, total };
 }
 
 /** Count items across pages (bounded to avoid overload). */

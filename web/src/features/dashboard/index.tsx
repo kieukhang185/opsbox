@@ -9,18 +9,20 @@ export default function DashboardPage() {
   const eventsQ = useQuery({
     queryKey: ["events", "warnings"],
     queryFn: () =>
-      get<ListResponse<Event>>("/kubectl/events", {
+      list<Event>("/kubectl/events", {
         only_warnings: true,
         since_seconds: 900,
         limit: 20,
       }),
   });
+  console.log("eventsQ:", eventsQ);
 
   // counts
   const namespacesCountQ = useQuery({
     queryKey: ["namespaces-count"],
     queryFn: () => listAllCount("/kubectl/namespaces", {}),
   });
+  console.log("namespacesCountQ:", namespacesCountQ);
 
   const nodesQ = useQuery({
     queryKey: ["nodes-summary"],
@@ -80,7 +82,7 @@ export default function DashboardPage() {
         <KPICard label="Pods" value={podsTotal || "—"} hint={podsSummary} />
         <KPICard
           label="Warnings (15m)"
-          value={eventsQ.data?.items.length ?? 0}
+          value={eventsQ.data?.items?.length ?? 0}
         />
       </div>
 

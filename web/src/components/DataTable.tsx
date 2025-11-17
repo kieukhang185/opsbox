@@ -7,14 +7,14 @@ type Column<T> = {
 };
 type Props<T> = {
   columns: Column<T>[];
-  rows: T[];
+  rows?: T[];
   onLoadMore?: () => void;
   hasMore?: boolean;
 };
 
 export default function DataTable<T>({
   columns,
-  rows,
+  rows = [],
   onLoadMore,
   hasMore,
 }: Props<T>) {

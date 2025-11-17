@@ -1,7 +1,7 @@
 ---
 version: "3.8"
 services:
-  api:
+  opsbox-api:
     build:
       context: .
       dockerfile: ./api/Dockerfile.dev
@@ -22,7 +22,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./api/app/data/init:/docker-entrypoint-initdb.d
 
-  web:
+  opsbox-web:
     build:
       context: .
       dockerfile: ./web/Dockerfile
@@ -32,7 +32,7 @@ services:
     env_file:
       - .env
     depends_on:
-      - api
+      - opsbox-api
 
 volumes:
   postgres_data:
