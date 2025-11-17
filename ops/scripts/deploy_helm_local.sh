@@ -68,7 +68,7 @@ load_images_into_kind(){
 deploy_charts(){
     log_info "Deploying Helm charts (API & Worker) to namespace ${K8S_NAMESPACE}..."
     helm upgrade --install api ./ops/helm/api -n dev \
-    --set image.repository="$(cut -d: -f1 <<< "${API_IMG}")" \
+        --set image.repository="$(cut -d: -f1 <<< "${API_IMG}")" \
         --set image.tag="$(cut -d: -f2 <<< "${API_IMG}")"
 
     helm upgrade --install worker ./ops/helm/worker -n dev \
@@ -95,10 +95,13 @@ smoke_test(){
 
 # Deploy Web Helm chart
 deploy_web(){
+    log_info "Deploying ingress controller..."
+    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+
     log_info "Deploying Helm chart (Web) to namespace ${K8S_NAMESPACE}..."
     kubectl -n dev apply -f ./ops/helm/web/opsbox-web-nginx-configmap.yaml
     helm upgrade --install web ./ops/helm/web -n dev \
-    --set image.repository="$(cut -d: -f1 <<< "${WEB_IMG}")" \
+        --set image.repository="$(cut -d: -f1 <<< "${WEB_IMG}")" \
         --set image.tag="$(cut -d: -f2 <<< "${WEB_IMG}")"
 
     log_info "Waiting for web deployment to be ready..."

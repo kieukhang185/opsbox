@@ -25,7 +25,7 @@ kubectl -n dev port-forward svc/rabbitmq 15672:15672
 kubectl -n dev get secret redis -o jsonpath='{.data.redis-password}' | base64 -d
 
 # forward api that deploy by argo rollout
-k -n dev port-forward svc/opsbox-api 8000:80
+k -n dev port-forward svc/opsbox-api 8081:8081
 
 # opsbox cli
 export PATH=$PATH://home/ubuntu/.local/bin
@@ -40,4 +40,7 @@ sudo mv cosign-linux-amd64 /usr/local/bin/cosign
 sudo chmod +x /usr/local/bin/cosign
 
 # get argocd password
-kubectl -n argocd get secret argocd-initial-admin-secret -o go-template='{{.data.password | base64decode}}'; echo
+kubectl -n
+
+# deploy nginx ingress
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
