@@ -5,8 +5,11 @@ nodes:
   - role: control-plane
     image: kindest/node:v1.33.1
     extraPortMappings:
-      - containerPort: 30080  # you can map an ingress if needed later
-        hostPort: 8080
+      - containerPort: 80 # http Port inside the KIND node container
+        hostPort: 8080    # Port on the host machine
+        protocol: TCP
+      - containerPort: 443 # https Port inside the KIND node container
+        hostPort: 8443     # Port on the host machine
         protocol: TCP
   - role: worker
     image: kindest/node:v1.33.1

@@ -9,6 +9,7 @@ K8S_NAMESPACE="${K8S_NAMESPACE:-dev}"
 PROM_RELEASE="${PROM_RELEASE:-monitoring}"
 API_IMG="${API_IMG:-opsbox-api:dev}"
 WORKER_IMG="${WORKER_IMG:-opsbox-worker:dev}"
+WEB_IMG="${WEB_IMG:-opsbox-web:dev}"
 BITNAMI_REPO="https://charts.bitnami.com/bitnami"
 PROM_REPO="https://prometheus-community.github.io/helm-charts"
 MONITORING_ENABLED=true
@@ -19,6 +20,7 @@ ARGOCD_ENABLED="false"
 source "${WORKSPACE}/ops/scripts/libs/common.sh"
 pushd "$WORKSPACE" || exit 1
 
+# Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
         -env|--environment)
@@ -46,12 +48,16 @@ setup(){
 # shellcheck disable=SC1091
 source "${WORKSPACE}/ops/scripts/kubernetes_setup.sh"
 
+# Install required CLIs
 setup docker kind kubectl helm sops age
 
+# Create Kind cluster if it doesn't exist
 create_kind_cluster "${KIND_CLUSTER_NAME}"
 
+# Ensure Kubernetes namespace exists: dev
 ensure_namespace "${K8S_NAMESPACE}"
 
+# Apply application secrets
 apply_app_secret(){
     log_info "Applying application secrets..."
     export SOPS_AGE_KEY_FILE="${SOPS_AGE_KEY_FILE:-${WORKSPACE}/ops/infra/age.key}"
@@ -65,6 +71,7 @@ apply_app_secret(){
     sops -d ops/secrets/dev.app.enc.yaml | kubectl -n "${K8S_NAMESPACE}" apply -f -
 }
 
+# Install monitoring stack
 install_monitoring(){
     log_info "Installing monitoring stack..."
     helm upgrade --install "${PROM_RELEASE}" prometheus-community/kube-prometheus-stack \
@@ -74,6 +81,7 @@ install_monitoring(){
     kubectl -n "${PROM_RELEASE}" rollout status statefulset/"${PROM_RELEASE}"-prometheus --timeout=5m || true
 }
 
+# Install dependencies: Postgres, RabbitMQ, Redis, (optionally) monitoring stack
 install_deps(){
     if [[ "${MONITORING_ENABLED}" == "true" ]]; then
         ensure_namespace "$PROM_RELEASE"
@@ -91,11 +99,13 @@ install_deps(){
     kubectl -n "$K8S_NAMESPACE" rollout status statefulset/redis-master --timeout=240s || true
 }
 
+# Apply service account for dev namespace
 apply_sa_dev(){
   log_info "Applying service account..."
   kubectl -n "${K8S_NAMESPACE}" apply -f "${WORKSPACE}/ops/scripts/templates/rbac-readonly.yaml"
 }
 
+# Ensure Argo Rollouts is installed
 argo_rollouts(){
     kubectl get namespace argo-rollouts >/dev/null 2>&1 || kubectl create namespace argo-rollouts --dry-run=client -o yaml | kubectl apply -f -
     log_info "Ensuring Argo Rollouts is installed..."
@@ -109,18 +119,21 @@ argo_rollouts(){
     fi
 }
 
+# Main
 apply_app_secret
 install_deps
 apply_sa_dev
 argo_rollouts
 
+# Deploy application via Helm or ArgoCD
 if [[ "${ARGOCD_ENABLED}" == "false" && "${DEPLOY_ENV}" == "local" ]]; then
     log_info "Deploying Helm charts locally..."
     bash "${WORKSPACE}/ops/scripts/deploy_helm_local.sh" \
         --api-image "${API_IMG}" \
         --k8s-namespace "${K8S_NAMESPACE}" \
         --kind-cluster-name "${KIND_CLUSTER_NAME}" \
-        --worker-image "${WORKER_IMG}"
+        --worker-image "${WORKER_IMG}" \
+        --web-image "${WEB_IMG}"
 else
     log_info "ArgoCD deployment enabled..."
     setup argocd

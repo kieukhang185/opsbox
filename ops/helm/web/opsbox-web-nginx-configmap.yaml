@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: opsbox-web-nginx
+data:
+  default.conf: |
+    server {
+      listen 80;
+      server_name _;
+      root   /usr/share/nginx/html;
+      index  index.html;
+
+      # Serve built static assets as files (no fallback)
+      location ~* \.(js|mjs|css|map|json|png|jpg|jpeg|gif|svg|ico|webp|woff2?|ttf|eot)$ {
+        try_files $uri =404;
+        access_log off;
+        expires 1y;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+      }
+
+      # Health check endpoint
+      location = /healthz {
+        access_log off;
+        add_header Content-Type text/plain always;
+        return 200 "ok";
+      }
+
+      location / {
+        try_files $uri $uri/ /index.html;
+      }
+
+    }
