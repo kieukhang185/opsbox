@@ -1,7 +1,7 @@
 ---
 # This flow is used to build and push Docker images to GitHub Container Registry on changes to main branch.
 # and deploy to a Kubernetes cluster and run a smoke test job.
-name: build-and-test
+name: Build, Push, Deploy, and Test
 
 on:
   push:

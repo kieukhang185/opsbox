@@ -23,16 +23,37 @@ concurrency:
 
 jobs:
   # Single deploy job since we're just deploying
+  detect-changes:
+    runs-on: ubuntu-24.04
+    outputs:
+      page-build: ${{ steps.filter.outputs.page }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Filter changes
+        id: filter
+        uses: dorny/paths-filter@v2
+        with:
+          filters: |
+            page:
+              - 'site/*'
+              - 'index.html'
+
   deploy:
+    needs: detect-changes
+    if: (needs.detect-changes.outputs.page-build == 'true')
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
@@ -40,6 +61,7 @@ jobs:
           path: |
             site
             index.html
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

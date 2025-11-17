@@ -1,6 +1,6 @@
 ---
 # This flow is used to test and build the project on each push to the dev branch.
-name: ci
+name: CI
 on:
     push:
         branches: [dev]
