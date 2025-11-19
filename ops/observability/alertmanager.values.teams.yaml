@@ -12,5 +12,5 @@ alertmanager:
     receivers:
       - name: "teams"
         webhook_configs:
-          - url: "https://endava.webhook.office.com/webhookb2/22e084f8-0521-44f3-9bf0-37f2a628a0f7@0b3fc178-b730-4e8b-9843-e81259237b77/IncomingWebhook/8e285c22b3b04093b1a33a6c68446291/bda7a5b3-d500-45bc-a929-de5cc2558a28/V2tLPPvZQ6mCgk7BIG1HBWMfLT8XMNozmS2lkOJBmgAHU1"
+          - url: ""
             send_resolved: true
